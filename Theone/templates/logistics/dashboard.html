@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<!-- ✅ CSRF TOKEN (IMPORTANT) -->
+
+<form style="display:none;">
+    {% csrf_token %}
+</form>
+
+<h2>💻 Logistics Dashboard</h2>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Center</th>
+        <th>Total PC</th>
+        <th>Working</th>
+        <th>Repair</th>
+    </tr>
+
+```
+{% for log in logs %}
+<tr>
+    <!-- Center -->
+    <td>{{ log.center.name }}</td>
+
+    <!-- Total PC (Double Click Editable) -->
+    <td ondblclick="editTotal({{ log.id }}, this)">
+        <span>{{ log.total_pc }}</span>
+    </td>
+
+    <!-- Working PC (Auto Calculated) -->
+    <td data-field="working">
+        {{ log.working_pc }}
+    </td>
+
+    <!-- Repair PC (Double Click Editable) -->
+    <td ondblclick="editRepair({{ log.id }}, this)">
+        <span>{{ log.repair_pc }}</span>
+    </td>
+</tr>
+{% endfor %}
+```
+
+</table>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+// ✅ CSRF TOKEN
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+
+// =======================
+// 🔥 EDIT TOTAL PC
+// =======================
+function editTotal(id, element) {
+    let current = element.innerText.trim();
+
+    element.innerHTML = `
+        <input type="number" value="${current}" min="0"
+        onblur="saveTotal(${id}, this)">
+    `;
+}
+
+function saveTotal(id, input) {
+    let value = input.value;
+
+    fetch(`/logistics/update-total/${id}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: `total_pc=${value}`
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.status === 'success') {
+
+            input.parentElement.innerHTML = `<span>${data.total_pc}</span>`;
+
+            let row = input.closest("tr");
+
+            let workingCell = row.querySelector('[data-field="working"]');
+
+            if (workingCell) {
+                workingCell.innerText = data.working_pc;
+            }
+
+        } else {
+            alert(data.message || "Update failed");
+        }
+    });
+}
+
+
+// =======================
+// 🔥 EDIT REPAIR PC
+// =======================
+function editRepair(id, element) {
+    let current = element.innerText.trim();
+
+    element.innerHTML = `
+        <input type="number" value="${current}" min="0"
+        onblur="saveRepair(${id}, this)">
+    `;
+}
+
+function saveRepair(id, input) {
+    let value = input.value;
+
+    fetch(`/logistics/update-repair/${id}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: `repair_pc=${value}`
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.status === 'success') {
+
+            input.parentElement.innerHTML = `<span>${data.repair_pc}</span>`;
+
+            let row = input.closest("tr");
+
+            let workingCell = row.querySelector('[data-field="working"]');
+
+            if (workingCell) {
+                workingCell.innerText = data.working_pc;
+            }
+
+        } else {
+            alert(data.message || "Update failed");
+        }
+    });
+}
+
+</script>
+
+{% endblock %}

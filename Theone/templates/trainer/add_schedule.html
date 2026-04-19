@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<a href="{% url 'trainer_detail' trainer.id %}">⬅️ Back</a>
+<h2>Add Schedule for {{ trainer.name }}</h2>
+
+{% if error %}
+    <p style="color:red">{{ error }}</p>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Center:</label>
+    <select name="center">
+        {% for c in centers %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <label>Batch:</label>
+    <select name="batch">
+        {% for b in batches %}
+            <option value="{{ b.id }}">{{ b.time }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <label>Start Time:</label>
+    <input type="time" name="start_time"><br><br>
+
+    <label>End Time:</label>
+    <input type="time" name="end_time"><br><br>
+
+    <button type="submit">Save Schedule</button>
+
+</form>
+
+{% endblock %}

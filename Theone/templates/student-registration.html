@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+<h1>Student Registration Page</h1>
+
+<form method="POST">
+    {%csrf_token%}
+  <label>Name :-</label>
+  <input type="text" name="name" placeholder=""> <br><br>
+  <label>Mobile No. :-</label>
+  <input type="text" name="mobile_no"> <br><br>
+  <label>Alternative Mobile No. :-</label>
+    <input type="text" name="alt_mobile_no"> <br><br>
+ <label>DOB:</label>
+    <input type="date" name="dob"><br><br>
+
+    <label>Joining Date:</label>
+    <input type="date" name="joining_date"><br><br>
+
+    <label>Select Counsellor:</label>
+<select name="counsellor">
+    <option value="">-- Select --</option>
+    {% for c in counsellors %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+    {% endfor %}
+</select> <br><br>
+
+<details>
+    <summary> <b>Select Courses </b></summary>
+
+    {% for course in courses %}
+        <input type="checkbox" name="courses" value="{{ course.id }}">
+        {{ course.name }} <br>
+    {% endfor %}
+
+</details>
+    <br>
+    <label> Total Course Fees :-</label>
+    <input type="number" name="course_fee" placeholder="Course Fee"><br><br>
+    <label> Paid Fees :-</label>
+<input type="number" name="paid_fee" placeholder="Paid Fee">
+    <br><br>
+
+    <label>Trainer:</label>
+<select name="trainer">
+    <option value="">-- Select Trainer --</option>
+    {% for t in trainers %}
+        <option value="{{ t.id }}">{{ t.name }}</option>
+    {% endfor %}
+</select>
+    <br> <br>
+<label>Batch Time:</label>
+<select name="batch">
+    <option value="">-- Select Batch --</option>
+    {% for b in batches %}
+        <option value="{{ b.id }}">{{ b.time }}</option>
+    {% endfor %}
+</select>
+    <br> <br>
+    <label>Center:</label>
+<select name="center">
+    <option value="">-- Select Center --</option>
+    {% for c in centers %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+    {% endfor %}
+</select>
+
+    <br><br> <input type="submit" value="Submit-here">
+</form>
+
+
+
+
+{% endblock %}

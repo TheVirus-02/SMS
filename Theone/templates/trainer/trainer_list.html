@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Trainer Panel</h2>
+
+<!-- 🔥 Sub Navbar -->
+<div style="margin-bottom:20px;">
+    <a href="{% url 'add_trainer' %}">➕ Add Trainer</a> |
+
+</div>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Name</th>
+        <th>Mobile</th>
+        <th>Action</th>
+    </tr>
+
+    {% for t in trainers %}
+    <tr>
+        <td>
+            <a href="{% url 'trainer_detail' t.id %}">
+                {{ t.name }}
+            </a>
+        </td>
+        <td>{{ t.mobile }}</td>
+
+        <!-- 🔥 Delete Button -->
+        <td>
+            <a href="{% url 'delete_trainer' t.id %}"
+               onclick="return confirm('Delete this trainer?')">
+               ❌ Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+
+{% if messages %}
+    {% for message in messages %}
+        <p style="color: green; font-weight: bold;">
+            {{ message }}
+        </p>
+    {% endfor %}
+{% endif %}
+<h2>Student Details</h2>
+
+<p><b>ID:</b> {{ student.student_id }}</p>
+<p><b>Name:</b> {{ student.name }}</p>
+<p><b>Mobile:</b> {{ student.mobile_no }}</p>
+<p><b>Counsellor:</b> {{ student.counsellor.name }}</p>
+<p><b>Courses:</b>
+    {% for course in student.courses.all %}
+        {{ course.name }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+</p>
+<p><b>Trainer:</b> {{ student.trainer.name }}</p>
+<p><b>Batch:</b> {{ student.batch.time }}</p>
+<p><b>Center:</b> {{ student.center.name }}</p>
+<p><b>Status:</b> {{ student.get_status_display }}</p>
+<hr>
+<h3>Courses Details</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Course</th>
+        <th>Status</th>
+        <th>Completion Date</th>
+    </tr>
+
+    {% for sc in student.studentcourse_set.all %}
+    <tr>
+        <td>{{ sc.course.name }}</td>
+
+        <td>
+            {% if sc.is_completed %}
+                <span style="color:green;">✅ Completed</span>
+            {% else %}
+                <span style="color:red;">❌ Ongoing</span>
+            {% endif %}
+        </td>
+
+        <td>
+            {% if sc.completion_date %}
+                {{ sc.completion_date }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="3">No courses assigned</td>
+    </tr>
+    {% endfor %}
+</table>
+<br><br>
+<hr>
+
+<h3>Fee Summary</h3>
+
+<p>Total Fee: {{ student.course_fee }}</p>
+
+<p>Admission Paid Fee: {{ student.paid_fee }}</p>
+
+<p>Installment Paid: {{ student.installment_total }}</p>
+
+<p><b>Total Paid:</b> {{ student.total_paid }}</p>
+
+<p><b>Remaining:</b> {{ student.remaining_fee }}</p>
+
+<br><br>
+<hr>
+
+<p>
+    <b>Status:</b>
+    {% if student.payment_status == "Paid" %}
+        <span style="color:green;">Paid ✅</span>
+    {% elif student.payment_status == "Partial" %}
+        <span style="color:orange;">Partial ⚠️</span>
+    {% else %}
+        <span style="color:red;">Pending ❌</span>
+    {% endif %}
+</p>
+
+
+
+<!--Installment Table-->
+<h3>Installments</h3>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>No</th>
+        <th>Date</th>
+        <th>Amount</th>
+    </tr>
+
+    {% for ins in student.installment_set.all %}
+    <tr>
+        <td>{{ ins.installment_no }}</td>
+        <td>{{ ins.installment_date }}</td>
+        <td>{{ ins.amount }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<br><br>
+
+<hr>
+<h2>{{ student.name }} - Attendance</h2>
+
+<table border="1" cellpadding="10">
+
+    <tr>
+        <th>Date</th>
+        <th>Status</th>
+    </tr>
+
+    {% for a in attendance %}
+    <tr style="
+        {% if a.status == 'present' %}background-color: lightgreen;
+        {% elif a.status == 'absent' %}background-color: lightcoral;
+        {% else %}background-color: lightyellow;
+        {% endif %}
+    ">
+        <td>{{ a.date }}</td>
+        <td>{{ a.status }}</td>
+    </tr>
+    {% endfor %}
+
+</table>
+
+
+
+{% endblock %}

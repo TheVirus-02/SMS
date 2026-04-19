@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: thelastproject-web
+    runtime: python
+    plan: free
+    rootDir: Theone
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn Theone.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.0
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: thelastproject-web.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://thelastproject-web.onrender.com
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: thelastproject-db
+          property: connectionString
+
+databases:
+  - name: thelastproject-db
+    plan: free

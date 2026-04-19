@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="{% url 'trainer_detail' trainer.id %}" style="margin-left:20px;">⬅️ Back</a>
+<h2>Update Trainer</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    <label>Name :- </label>
+    <input type="text" name="name" value="{{ trainer.name }}"><br><br>
+    <label>Age :-</label>
+    <input type="number" name="age" value="{{ trainer.age }}"><br><br>
+    <label>Date of Birth :-</label>
+    <input type="date" name="dob" value="{{ trainer.dob }}"><br><br>
+    <label>Mobile No :-</label>
+    <input type="text" name="mobile" value="{{ trainer.mobile }}"><br><br>
+    <label>Joining Date</label>
+    <input type="date" name="joining_date" value="{{ trainer.joining_date|date:'Y-m-d' }}">
+    <br><br>
+    <label>Select Courses:</label><br>
+
+<select name="courses" multiple size="5">
+    {% for c in courses %}
+        <option value="{{ c.id }}"
+            {% if c in trainer.courses.all %}selected{% endif %}>
+            {{ c.name }}
+        </option>
+    {% endfor %}
+</select>
+    <br><br>
+    <button type="submit">Update</button>
+</form>
+
+{% endblock %}

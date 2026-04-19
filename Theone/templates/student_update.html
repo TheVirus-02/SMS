@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Update Student</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <!-- Name -->
+    <input type="text" name="name" value="{{ student.name }}"><br><br>
+
+    <!-- Mobile -->
+    <input type="text" name="mobile_no" value="{{ student.mobile_no }}"><br><br>
+
+    <!-- Trainer -->
+    <select name="trainer">
+        {% for t in trainers %}
+            <option value="{{ t.id }}" {% if student.trainer_id == t.id %}selected{% endif %}>
+                {{ t.name }}
+            </option>
+        {% endfor %}
+    </select><br><br>
+
+    <!-- Batch -->
+    <select name="batch">
+        {% for b in batches %}
+            <option value="{{ b.id }}" {% if student.batch_id == b.id %}selected{% endif %}>
+                {{ b.time }}
+            </option>
+        {% endfor %}
+    </select><br><br>
+
+    <!-- Center -->
+    <select name="center">
+        {% for c in centers %}
+            <option value="{{ c.id }}" {% if student.center_id == c.id %}selected{% endif %}>
+                {{ c.name }}
+            </option>
+        {% endfor %}
+    </select><br><br>
+
+    <!-- Fees -->
+    <input type="number" name="course_fee" value="{{ student.course_fee }}"><br><br>
+    <input type="number" name="paid_fee" value="{{ student.paid_fee }}"><br><br>
+
+    <!-- Courses -->
+    <h4>Select Courses</h4>
+    {% for course in courses %}
+        <input type="checkbox" name="courses" value="{{ course.id }}"
+        {% if course in student.courses.all %}checked{% endif %}>
+        {{ course.name }}
+    {% endfor %} <br><br>
+
+<h3>Courses</h3>
+
+{% for course in courses %}
+    <div style="border:1px solid #ccc; padding:10px; margin-bottom:5px;">
+
+        <!-- Select Course -->
+        <input type="checkbox" name="courses" value="{{ course.id }}"
+        {% for sc in student.studentcourse_set.all %}
+            {% if sc.course.id == course.id %}checked{% endif %}
+        {% endfor %}
+        >
+        <b>{{ course.name }}</b>
+
+        <!-- Completed -->
+        <label>
+            <input type="checkbox" name="completed_{{ course.id }}"
+            {% for sc in student.studentcourse_set.all %}
+                {% if sc.course.id == course.id and sc.is_completed %}checked{% endif %}
+            {% endfor %}
+            >
+            Completed
+        </label>
+
+        <!-- Completion Date -->
+        <input type="date" name="date_{{ course.id }}"
+        value="{% for sc in student.studentcourse_set.all %}
+                    {% if sc.course.id == course.id %}
+                        {{ sc.completion_date|date:'Y-m-d' }}
+                    {% endif %}
+               {% endfor %}"
+        >
+
+    </div>
+{% endfor %}
+
+    <br><br> <label>Status:</label>
+<select name="status">
+    {% for key, value in student.STATUS_CHOICES %}
+        <option value="{{ key }}" {% if student.status == key %}selected{% endif %}>
+            {{ value }}
+        </option>
+    {% endfor %}
+</select>
+<br><br>
+    <br>
+    <button type="submit">Save</button>
+</form>
+
+<br>
+<a href="{% url 'student_detail' student.id %}">⬅ Back</a>
+{% endblock %}

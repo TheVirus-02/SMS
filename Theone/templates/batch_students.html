@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Batch-Students List  </title>
+</head>
+<body>
+<h2>Students - {{ batch.time }}</h2>
+<h4>Date: {{ today }}</h4>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <table border="1">
+        <tr>
+            <th>Student</th>
+            <th>Present</th>
+        </tr>
+
+        {% for s in students %}
+        <tr>
+
+            <td>
+                <a href="{% url 'student_detail' s.id %}">
+                    {{ s.name }}
+                </a>
+            </td>
+
+            <td>
+                <input type="checkbox"
+                       name="status_{{ s.id }}"
+                       value="present"
+                       {% if attendance_map|get_item:s.id == "present" %}
+                       checked
+                       {% endif %}>
+            </td>
+
+        </tr>
+        {% endfor %}
+
+    </table>
+
+    <button type="submit">Save</button>
+</form>
+</body>
+</html>

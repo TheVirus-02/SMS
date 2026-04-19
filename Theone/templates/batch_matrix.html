@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load dict_extras %}
+
+
+{% block content %}
+<h2>Batch Status Matrix</h2>
+
+<table border="1" cellpadding="10">
+
+    <tr>
+        <th>Batch Time / Center</th>
+
+        {% for center in centers %}
+            <th>{{ center }}</th>
+        {% endfor %}
+    </tr>
+
+    {% for time in times %}
+    <tr>
+        <th>{{ time }}</th>
+
+        {% for center in centers %}
+            <td>
+                {{ matrix|get_item:time|get_item:center|default:"0" }}
+            </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+
+</table>
+{% endblock %}

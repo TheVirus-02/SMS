@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>{{ trainer.name }} | {{ batch.time }}</h2>
+<p>Date: {{ today }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <table border="1" cellpadding="10">
+        <tr>
+            <th>Student</th>
+            <th>Status</th>
+        </tr>
+
+        {% for s in students %}
+        <tr>
+            <td>{{ s.name }}</td>
+            <td>
+                <select name="status_{{ s.id }}">
+                    <option value="">--Select--</option>
+                    <option value="present" {% if attendance_dict.s.id == "present" %}selected{% endif %}>Present</option>
+                    <option value="absent">Absent</option>
+                    <option value="leave">Leave</option>
+                </select>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <button type="submit">Save Attendance</button>
+
+</form>
+
+{% endblock %}

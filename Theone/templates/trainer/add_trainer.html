@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Add Trainer</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    <label>Name :-</label>
+    <input type="text" name="name" placeholder="Name"><br><br>
+    <label>Age :-</label>
+    <input type="number" name="age" placeholder="Age"><br><br>
+    <label>Date of Birth :-</label>
+    <input type="date" name="dob"><br><br>
+    <label>Mobile No :-</label>
+    <input type="text" name="mobile" placeholder="Mobile"><br><br>
+    <label>Joining Date :-</label>
+    <input type="date" name="joining_date"><br><br>
+    <label>Select Courses:</label><br>
+
+<select name="courses" multiple size="5">
+    {% for c in courses %}
+        <option value="{{ c.id }}">{{ c.name }}</option>
+    {% endfor %}
+</select> <br><br>
+
+    <button type="submit">Save</button>
+</form>
+
+{% endblock %}

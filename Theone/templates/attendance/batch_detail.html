@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Batch: {{ batch.time|time:"h A" }}</h2>
+
+{% for center in data %}
+
+    <!-- 🔥 Center Name + Total Students -->
+    <h3>
+        {{ center.center_name }}
+        (Total Students: {{ center.total_students }})
+    </h3>
+
+    <ul>
+        {% for t in center.trainers %}
+            <li>
+                <a href="{% url 'mark_attendance' t.trainer.id batch.id %}">
+                    {{ t.trainer.name }}
+                </a>
+
+                👉 Students: {{ t.count }}
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endfor %}
+
+{% endblock %}

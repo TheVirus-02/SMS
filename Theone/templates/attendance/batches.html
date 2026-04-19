@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Select Batch</h2>
+
+<div style="display:flex;flex-direction: column; flex-wrap:wrap; gap:10px;justify-content: center;">
+
+{% for item in batch_data %}
+
+<a href="{% url 'attendance_batch_detail' item.batch.id %}">
+
+    {{ item.batch.time|time:"h A" }} /
+
+    {% for c in item.centers %}
+        {{ c.center }} - {{ c.available }}
+        {% if not forloop.last %} | {% endif %}
+    {% endfor %}
+
+</a>
+
+{% endfor %}
+
+</div>
+
+{% endblock %}

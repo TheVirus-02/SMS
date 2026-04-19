@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Add Installment</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Installment No:</label>
+    <input type="number" name="installment_no" required>
+    <br><br>
+
+    <label>Date:</label>
+    <input type="date" name="installment_date" required>
+    <br><br>
+
+      <label>Total Course Fee:</label>
+    <input type="number" id="course_fee" value="{{ student.course_fee }}" readonly><br><br>
+
+     <label>Total Paid Fee:</label>
+    <input type="number" id="paid_fee" value="{{ student.total_paid }}" readonly><br><br>
+
+      <label>New Installment Amount:</label>
+    <input type="number" id="new_amount" name="amount" required><br><br>
+    <br><br>
+
+    <label>Remaining Fee:</label>
+    <input type="number" id="remaining_fee" readonly placeholder="{{ student.remaining_fee }}"><br><br>
+
+    <button type="submit">Save</button>
+</form>
+<br><br>
+<p id="status"></p>
+{% endblock %}
+{% block scripts %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+    function calculateRemaining() {
+
+        let courseFee = parseFloat(document.getElementById("course_fee").value) || 0;
+        let oldtotalpaid = parseFloat(document.getElementById("paid_fee").value) || 0;
+        let newAmount = parseFloat(document.getElementById("new_amount").value) || 0;
+
+        let newtotalPaid = oldtotalpaid + newAmount;
+
+        let remaining = courseFee - newtotalPaid;
+
+        if (remaining < 0) {remaining = 0;}
+
+        document.getElementById("remaining_fee").value = remaining;
+    }
+
+    let inputField = document.getElementById("new_amount");
+
+    if (inputField) {
+        inputField.addEventListener("input", calculateRemaining);
+    }
+
+});
+</script>
+
+{% endblock %}

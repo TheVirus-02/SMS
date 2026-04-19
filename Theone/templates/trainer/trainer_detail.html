@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<a href="{% url 'update_trainer' trainer.id %}" style="margin-left:20px;">
+    ✏️ Update Trainer
+</a>
+
+<h2>{{ trainer.name }}</h2>
+
+<p>Mobile: {{ trainer.mobile }}</p>
+<p>Joining Date: {{ trainer.joining_date }}</p>
+<p>Date of Birth : {{ trainer.dob|date:'Y-m-d' }}</p>
+<h3>Courses:</h3>
+
+<ul>
+    {% for c in trainer.courses.all %}
+        <li>{{ c.name }}</li>
+    {% empty %}
+        <li>No courses assigned</li>
+    {% endfor %}
+</ul>
+
+<h3>Schedules</h3>
+
+<a href="{% url 'add_schedule' trainer.id %}">➕ Add Schedule</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Center</th>
+        <th>Batch</th>
+        <th>Time</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for s in schedules %}
+    <tr>
+        <td>{{ s.center.name }}</td>
+        <td>{{ s.batch.time|time:"h A" }}</td>
+        <td>{{ s.start_time|time:"h:i A" }} - {{ s.end_time|time:"h:i A" }}</td>
+
+        <td>
+            <a href="{% url 'update_schedule' s.id %}">✏️ Edit</a> |
+            <a href="{% url 'delete_schedule' s.id %}"
+               onclick="return confirm('Delete this schedule?')">
+               ❌ Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
