@@ -1,150 +1,82 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<!-- ✅ CSRF TOKEN (IMPORTANT) -->
-
 <form style="display:none;">
     {% csrf_token %}
 </form>
 
-<h2>💻 Logistics Dashboard</h2>
+<h2>Logistics Dashboard</h2>
+<p>Set the total computers and repair computers for each center. Working computers are calculated automatically.</p>
 
 <table border="1" cellpadding="10">
     <tr>
         <th>Center</th>
-        <th>Total PC</th>
-        <th>Working</th>
-        <th>Repair</th>
+        <th>Total PCs</th>
+        <th>Repair PCs</th>
+        <th>Working PCs</th>
+        <th>Action</th>
     </tr>
-
-```
-{% for log in logs %}
-<tr>
-    <!-- Center -->
-    <td>{{ log.center.name }}</td>
-
-    <!-- Total PC (Double Click Editable) -->
-    <td ondblclick="editTotal({{ log.id }}, this)">
-        <span>{{ log.total_pc }}</span>
-    </td>
-
-    <!-- Working PC (Auto Calculated) -->
-    <td data-field="working">
-        {{ log.working_pc }}
-    </td>
-
-    <!-- Repair PC (Double Click Editable) -->
-    <td ondblclick="editRepair({{ log.id }}, this)">
-        <span>{{ log.repair_pc }}</span>
-    </td>
-</tr>
-{% endfor %}
-```
-
+    {% for log in logs %}
+    <tr data-log-id="{{ log.id }}">
+        <td>{{ log.center.name }}</td>
+        <td>
+            <input type="number" min="0" value="{{ log.total_pc }}" data-field="total">
+        </td>
+        <td>
+            <input type="number" min="0" value="{{ log.repair_pc }}" data-field="repair">
+        </td>
+        <td data-field="working">{{ log.working_pc }}</td>
+        <td>
+            <button type="button" onclick="saveLogistics({{ log.id }}, this)">Save</button>
+        </td>
+    </tr>
+    {% endfor %}
 </table>
-
 {% endblock %}
 
 {% block scripts %}
-
 <script>
-
-// ✅ CSRF TOKEN
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
 
-
-// =======================
-// 🔥 EDIT TOTAL PC
-// =======================
-function editTotal(id, element) {
-    let current = element.innerText.trim();
-
-    element.innerHTML = `
-        <input type="number" value="${current}" min="0"
-        onblur="saveTotal(${id}, this)">
-    `;
-}
-
-function saveTotal(id, input) {
-    let value = input.value;
-
-    fetch(`/logistics/update-total/${id}/`, {
+async function postValue(url, key, value) {
+    const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': getCSRFToken()
         },
-        body: `total_pc=${value}`
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        if (data.status === 'success') {
-
-            input.parentElement.innerHTML = `<span>${data.total_pc}</span>`;
-
-            let row = input.closest("tr");
-
-            let workingCell = row.querySelector('[data-field="working"]');
-
-            if (workingCell) {
-                workingCell.innerText = data.working_pc;
-            }
-
-        } else {
-            alert(data.message || "Update failed");
-        }
+        body: `${key}=${encodeURIComponent(value)}`
     });
+
+    const data = await response.json();
+    if (!response.ok || data.status !== 'success') {
+        throw new Error(data.message || 'Update failed');
+    }
+    return data;
 }
 
+async function saveLogistics(id, button) {
+    const row = button.closest('tr');
+    const totalInput = row.querySelector('[data-field="total"]');
+    const repairInput = row.querySelector('[data-field="repair"]');
+    const totalValue = Math.max(parseInt(totalInput.value || '0', 10), 0);
+    const repairValue = Math.max(parseInt(repairInput.value || '0', 10), 0);
 
-// =======================
-// 🔥 EDIT REPAIR PC
-// =======================
-function editRepair(id, element) {
-    let current = element.innerText.trim();
+    try {
+        button.disabled = true;
+        await postValue(`/logistics/update-total/${id}/`, 'total_pc', totalValue);
+        const repairData = await postValue(`/logistics/update-repair/${id}/`, 'repair_pc', repairValue);
 
-    element.innerHTML = `
-        <input type="number" value="${current}" min="0"
-        onblur="saveRepair(${id}, this)">
-    `;
+        totalInput.value = repairData.total_pc;
+        repairInput.value = repairData.repair_pc;
+        row.querySelector('[data-field="working"]').innerText = repairData.working_pc;
+    } catch (error) {
+        alert(error.message || 'Unable to save logistics values right now.');
+    } finally {
+        button.disabled = false;
+    }
 }
-
-function saveRepair(id, input) {
-    let value = input.value;
-
-    fetch(`/logistics/update-repair/${id}/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCSRFToken()
-        },
-        body: `repair_pc=${value}`
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        if (data.status === 'success') {
-
-            input.parentElement.innerHTML = `<span>${data.repair_pc}</span>`;
-
-            let row = input.closest("tr");
-
-            let workingCell = row.querySelector('[data-field="working"]');
-
-            if (workingCell) {
-                workingCell.innerText = data.working_pc;
-            }
-
-        } else {
-            alert(data.message || "Update failed");
-        }
-    });
-}
-
 </script>
-
 {% endblock %}

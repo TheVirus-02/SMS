@@ -1,9 +1,7 @@
 from django.shortcuts import render,redirect,get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import Q,Count
 from django.core.exceptions import ValidationError
-from django.views.decorators.csrf import csrf_exempt
-
 from .models import Student, Course, Counsellor, Trainer, Batch, Center, StudentCourse, Installment, Attendance, \
     TrainerSchedule, CenterLogistics
 from datetime import date, datetime
@@ -503,32 +501,43 @@ def update_logistics(request, id, action):
     log.save()
     return redirect('logistics_dashboard')
 
-@csrf_exempt
 def update_total_pc(request, id):
-    if request.method == "POST":
-        log = CenterLogistics.objects.get(id=id)
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST request required.")
 
-        new_total = int(request.POST.get('total_pc', 0))
-        log.total_pc = new_total
-        log.save()
+    log = get_object_or_404(CenterLogistics, id=id)
+    try:
+        new_total = max(int(request.POST.get('total_pc', 0)), 0)
+    except (TypeError, ValueError):
+        return JsonResponse({'status': 'error', 'message': 'Enter a valid total PC count.'}, status=400)
 
-        return JsonResponse({
-            'status': 'success',
-            'total_pc': log.total_pc,
-            'working_pc': log.working_pc
-        })
+    log.total_pc = new_total
+    log.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'total_pc': log.total_pc,
+        'repair_pc': log.repair_pc,
+        'working_pc': log.working_pc
+    })
 
 def update_repair_pc(request, id):
-    if request.method == "POST":
-        log = get_object_or_404(CenterLogistics, id=id)
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST request required.")
 
-        new_repair = int(request.POST.get('repair_pc', 0))
-        log.repair_pc = new_repair
-        log.save()
+    log = get_object_or_404(CenterLogistics, id=id)
+    try:
+        new_repair = max(int(request.POST.get('repair_pc', 0)), 0)
+    except (TypeError, ValueError):
+        return JsonResponse({'status': 'error', 'message': 'Enter a valid repair PC count.'}, status=400)
 
-        return JsonResponse({
-            'status': 'success',
-            'repair_pc': log.repair_pc,
-            'working_pc': log.working_pc
-        })
+    log.repair_pc = new_repair
+    log.save()
+
+    return JsonResponse({
+        'status': 'success',
+        'total_pc': log.total_pc,
+        'repair_pc': log.repair_pc,
+        'working_pc': log.working_pc
+    })
 
