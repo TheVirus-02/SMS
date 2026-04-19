@@ -1,7 +1,175 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h3>WELCOME EVERYONE</h3>
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
 
-HERE WE ARE!
+    .dashboard-card,
+    .dashboard-panel {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .dashboard-card h4,
+    .dashboard-panel h4 {
+        margin: 0 0 8px;
+    }
+
+    .dashboard-value {
+        font-size: 30px;
+        font-weight: bold;
+        color: #0f4c81;
+        margin: 6px 0;
+    }
+
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    .quick-links {
+        display: grid;
+        gap: 10px;
+    }
+
+    .quick-links a {
+        display: block;
+        padding: 12px 14px;
+        background: #0f4c81;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 10px;
+    }
+
+    .quick-links a:hover {
+        background: #0c3d67;
+    }
+
+    .recent-list {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .recent-list li {
+        margin-bottom: 10px;
+    }
+
+    .attendance-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .attendance-box {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .attendance-box strong {
+        display: block;
+        font-size: 28px;
+        margin-top: 6px;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-panel" style="margin-bottom: 20px; background: linear-gradient(135deg, #0f4c81, #3aa6b9); color: white;">
+    <h2 style="margin: 0;">Student Management Dashboard</h2>
+    <p style="margin: 8px 0 0;">Track students, trainers, attendance, and center logistics from one place.</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-card">
+        <h4>Total Students</h4>
+        <div class="dashboard-value">{{ total_students }}</div>
+        <div>All registered students</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Active Students</h4>
+        <div class="dashboard-value">{{ active_students }}</div>
+        <div>Currently active batches</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Pending Fees</h4>
+        <div class="dashboard-value">{{ pending_fees }}</div>
+        <div>Students with dues left</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Trainers</h4>
+        <div class="dashboard-value">{{ trainers_count }}</div>
+        <div>Available trainers</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Centers</h4>
+        <div class="dashboard-value">{{ centers_count }}</div>
+        <div>Training locations</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Batches</h4>
+        <div class="dashboard-value">{{ batches_count }}</div>
+        <div>Configured time slots</div>
+    </div>
+</div>
+
+<h3>Attendance for {{ today }}</h3>
+<div class="attendance-strip">
+    <div class="attendance-box">
+        Present
+        <strong>{{ present_count }}</strong>
+    </div>
+    <div class="attendance-box">
+        Absent
+        <strong>{{ absent_count }}</strong>
+    </div>
+    <div class="attendance-box">
+        Leave
+        <strong>{{ leave_count }}</strong>
+    </div>
+</div>
+
+<div class="dashboard-layout">
+    <div class="dashboard-panel">
+        <h4>Recent Students</h4>
+        {% if recent_students %}
+        <ol class="recent-list">
+            {% for student in recent_students %}
+            <li>
+                <a href="{% url 'student_detail' student.id %}">{{ student.name }}</a>
+                <div>{{ student.student_id }} | {{ student.status|title }}</div>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p>No students have been added yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="dashboard-panel">
+        <h4>Quick Actions</h4>
+        <div class="quick-links">
+            <a href="{% url 'student_registration' %}">Add Student</a>
+            <a href="{% url 'record' %}">View Records</a>
+            <a href="{% url 'trainer_list' %}">Manage Trainers</a>
+            <a href="{% url 'attendance_batches' %}">Mark Attendance</a>
+            <a href="{% url 'logistics_dashboard' %}">Update Logistics</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

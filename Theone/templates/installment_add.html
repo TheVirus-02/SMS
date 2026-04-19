@@ -1,64 +1,258 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Add Installment</h2>
+<style>
+    .installment-shell {
+        max-width: 980px;
+        margin: 0 auto;
+    }
 
-<form method="POST">
-    {% csrf_token %}
+    .installment-hero {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+        padding: 24px 28px;
+        border-radius: 18px;
+        margin-bottom: 22px;
+    }
 
-    <label>Installment No:</label>
-    <input type="number" name="installment_no" required>
-    <br><br>
+    .installment-hero h2 {
+        margin: 0 0 8px;
+    }
 
-    <label>Date:</label>
-    <input type="date" name="installment_date" required>
-    <br><br>
+    .installment-layout {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 20px;
+    }
 
-      <label>Total Course Fee:</label>
-    <input type="number" id="course_fee" value="{{ student.course_fee }}" readonly><br><br>
+    .form-card,
+    .summary-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
-     <label>Total Paid Fee:</label>
-    <input type="number" id="paid_fee" value="{{ student.total_paid }}" readonly><br><br>
+    .section-title {
+        margin: 0 0 14px;
+        color: #17324d;
+    }
 
-      <label>New Installment Amount:</label>
-    <input type="number" id="new_amount" name="amount" required><br><br>
-    <br><br>
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
 
-    <label>Remaining Fee:</label>
-    <input type="number" id="remaining_fee" readonly placeholder="{{ student.remaining_fee }}"><br><br>
+    .field-group {
+        display: grid;
+        gap: 6px;
+    }
 
-    <button type="submit">Save</button>
-</form>
-<br><br>
-<p id="status"></p>
+    .field-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .field-group label {
+        font-weight: 600;
+        color: #17324d;
+    }
+
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        background: #f9fbfd;
+    }
+
+    .field-group textarea {
+        min-height: 96px;
+        resize: vertical;
+    }
+
+    .metric-grid {
+        display: grid;
+        gap: 12px;
+    }
+
+    .metric-box {
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #f4f8fb;
+        border: 1px solid #dfe8f0;
+    }
+
+    .metric-box span {
+        display: block;
+        color: #607080;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .metric-box strong {
+        font-size: 26px;
+        color: #17324d;
+    }
+
+    .highlight-box {
+        background: #eef6fb;
+        border-color: #cfe1ee;
+    }
+
+    .submit-btn,
+    .back-link {
+        display: inline-block;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .submit-btn {
+        border: 0;
+        background: #17324d;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .back-link {
+        background: #eef2f7;
+        color: #17324d;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .helper-list {
+        padding-left: 18px;
+        margin: 14px 0 0;
+    }
+
+    .helper-list li {
+        margin-bottom: 8px;
+        color: #556678;
+    }
+
+    @media (max-width: 820px) {
+        .installment-layout,
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-row {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="installment-shell">
+    <div class="installment-hero">
+        <h2>Add Installment</h2>
+        <div>Record a payment for {{ student.name }} and see the updated fee balance before saving.</div>
+    </div>
+
+    <div class="installment-layout">
+        <form method="POST" class="form-card">
+            {% csrf_token %}
+
+            <h3 class="section-title">Payment Entry</h3>
+            <div class="form-grid">
+                <div class="field-group">
+                    <label for="installment_no">Installment Number</label>
+                    <input id="installment_no" type="number" value="{{ next_installment_no }}" readonly>
+                </div>
+
+                <div class="field-group">
+                    <label for="installment_date">Installment Date</label>
+                    <input id="installment_date" type="date" name="installment_date" required>
+                </div>
+
+                <div class="field-group full">
+                    <label for="new_amount">Installment Amount</label>
+                    <input id="new_amount" type="number" name="amount" min="0" required placeholder="Enter received amount">
+                </div>
+
+                <div class="field-group">
+                    <label for="payment_mode">Payment Mode</label>
+                    <select id="payment_mode" name="payment_mode">
+                        {% for value, label in payment_mode_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label for="transaction_id">Transaction / Reference ID</label>
+                    <input id="transaction_id" type="text" name="transaction_id" placeholder="Optional transaction number">
+                </div>
+
+                <div class="field-group full">
+                    <label for="remarks">Remarks</label>
+                    <textarea id="remarks" name="remarks" placeholder="Optional note about this payment"></textarea>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button class="submit-btn" type="submit">Save Installment</button>
+                <a class="back-link" href="{% url 'student_detail' student.id %}">Back to Student Detail</a>
+            </div>
+        </form>
+
+        <div class="summary-card">
+            <h3 class="section-title">Fee Snapshot</h3>
+            <div class="metric-grid">
+                <div class="metric-box">
+                    <span>Student</span>
+                    <strong style="font-size: 22px;">{{ student.name }}</strong>
+                </div>
+                <div class="metric-box">
+                    <span>Total Course Fee</span>
+                    <strong id="course_fee">{{ student.course_fee|default:0 }}</strong>
+                </div>
+                <div class="metric-box">
+                    <span>Total Paid So Far</span>
+                    <strong id="paid_fee">{{ student.total_paid }}</strong>
+                </div>
+                <div class="metric-box highlight-box">
+                    <span>Remaining After This Installment</span>
+                    <strong id="remaining_fee">{{ student.remaining_fee }}</strong>
+                </div>
+            </div>
+
+            <ul class="helper-list">
+                <li>Use installment numbers in order to avoid duplicates for the same student.</li>
+                <li>Check the projected remaining fee before saving the entry.</li>
+                <li>If the amount exceeds the remaining balance, the preview will stop at zero.</li>
+                <li>Add a transaction ID for UPI, card, or bank transfer payments when available.</li>
+            </ul>
+        </div>
+    </div>
+</div>
 {% endblock %}
+
 {% block scripts %}
-
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-
+document.addEventListener('DOMContentLoaded', function() {
     function calculateRemaining() {
-
-        let courseFee = parseFloat(document.getElementById("course_fee").value) || 0;
-        let oldtotalpaid = parseFloat(document.getElementById("paid_fee").value) || 0;
-        let newAmount = parseFloat(document.getElementById("new_amount").value) || 0;
-
-        let newtotalPaid = oldtotalpaid + newAmount;
-
-        let remaining = courseFee - newtotalPaid;
-
-        if (remaining < 0) {remaining = 0;}
-
-        document.getElementById("remaining_fee").value = remaining;
+        const courseFee = parseFloat(document.getElementById('course_fee').innerText) || 0;
+        const oldTotalPaid = parseFloat(document.getElementById('paid_fee').innerText) || 0;
+        const newAmount = parseFloat(document.getElementById('new_amount').value) || 0;
+        const newTotalPaid = oldTotalPaid + newAmount;
+        const remaining = Math.max(courseFee - newTotalPaid, 0);
+        document.getElementById('remaining_fee').innerText = remaining;
     }
 
-    let inputField = document.getElementById("new_amount");
-
+    const inputField = document.getElementById('new_amount');
     if (inputField) {
-        inputField.addEventListener("input", calculateRemaining);
+        inputField.addEventListener('input', calculateRemaining);
     }
-
 });
 </script>
-
 {% endblock %}

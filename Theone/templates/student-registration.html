@@ -1,76 +1,299 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .registration-shell {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
 
+    .registration-hero {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+        padding: 24px 28px;
+        border-radius: 18px;
+        margin-bottom: 22px;
+    }
 
-<h1>Student Registration Page</h1>
+    .registration-hero h1 {
+        margin: 0 0 8px;
+    }
 
-<form method="POST">
-    {%csrf_token%}
-  <label>Name :-</label>
-  <input type="text" name="name" placeholder=""> <br><br>
-  <label>Mobile No. :-</label>
-  <input type="text" name="mobile_no"> <br><br>
-  <label>Alternative Mobile No. :-</label>
-    <input type="text" name="alt_mobile_no"> <br><br>
- <label>DOB:</label>
-    <input type="date" name="dob"><br><br>
+    .form-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
-    <label>Joining Date:</label>
-    <input type="date" name="joining_date"><br><br>
+    .section-title {
+        margin: 0 0 14px;
+        color: #17324d;
+    }
 
-    <label>Select Counsellor:</label>
-<select name="counsellor">
-    <option value="">-- Select --</option>
-    {% for c in counsellors %}
-        <option value="{{ c.id }}">{{ c.name }}</option>
-    {% endfor %}
-</select> <br><br>
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
 
-<details>
-    <summary> <b>Select Courses </b></summary>
+    .field-group {
+        display: grid;
+        gap: 6px;
+    }
 
-    {% for course in courses %}
-        <input type="checkbox" name="courses" value="{{ course.id }}">
-        {{ course.name }} <br>
-    {% endfor %}
+    .field-group.full {
+        grid-column: 1 / -1;
+    }
 
-</details>
-    <br>
-    <label> Total Course Fees :-</label>
-    <input type="number" name="course_fee" placeholder="Course Fee"><br><br>
-    <label> Paid Fees :-</label>
-<input type="number" name="paid_fee" placeholder="Paid Fee">
-    <br><br>
+    .field-group label {
+        font-weight: 600;
+        color: #17324d;
+    }
 
-    <label>Trainer:</label>
-<select name="trainer">
-    <option value="">-- Select Trainer --</option>
-    {% for t in trainers %}
-        <option value="{{ t.id }}">{{ t.name }}</option>
-    {% endfor %}
-</select>
-    <br> <br>
-<label>Batch Time:</label>
-<select name="batch">
-    <option value="">-- Select Batch --</option>
-    {% for b in batches %}
-        <option value="{{ b.id }}">{{ b.time }}</option>
-    {% endfor %}
-</select>
-    <br> <br>
-    <label>Center:</label>
-<select name="center">
-    <option value="">-- Select Center --</option>
-    {% for c in centers %}
-        <option value="{{ c.id }}">{{ c.name }}</option>
-    {% endfor %}
-</select>
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        background: #f9fbfd;
+    }
 
-    <br><br> <input type="submit" value="Submit-here">
-</form>
+    .field-group textarea {
+        min-height: 96px;
+        resize: vertical;
+    }
 
+    .course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+    }
 
+    .course-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid #dbe4ed;
+        border-radius: 12px;
+        background: #f9fbfd;
+    }
 
+    .course-option input {
+        width: auto;
+        margin: 0;
+    }
 
+    .helper-text {
+        font-size: 13px;
+        color: #596779;
+    }
+
+    .fee-summary {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #eef6fb;
+        display: inline-block;
+    }
+
+    .fee-summary strong {
+        font-size: 28px;
+        color: #0f4c81;
+        display: block;
+    }
+
+    .submit-btn {
+        border: 0;
+        border-radius: 12px;
+        background: #17324d;
+        color: #fff;
+        padding: 13px 18px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+
+    .submit-btn:hover {
+        background: #10253a;
+    }
+
+    @media (max-width: 820px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="registration-shell">
+    <div class="registration-hero">
+        <h1>Student Registration</h1>
+        <div>Add full student, contact, academic, and fee details in one place.</div>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+
+        <h3 class="section-title">Student Details</h3>
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="name">Student Name</label>
+                <input id="name" type="text" name="name" required placeholder="Enter full name">
+            </div>
+
+            <div class="field-group">
+                <label for="status">Student Status</label>
+                <select id="status" name="status">
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if value == 'active' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="mobile_no">Mobile Number</label>
+                <input id="mobile_no" type="text" name="mobile_no" required placeholder="Primary contact number">
+            </div>
+
+            <div class="field-group">
+                <label for="alt_mobile_no">Alternative Mobile</label>
+                <input id="alt_mobile_no" type="text" name="alt_mobile_no" placeholder="Optional backup number">
+            </div>
+
+            <div class="field-group">
+                <label for="guardian_name">Guardian Name</label>
+                <input id="guardian_name" type="text" name="guardian_name" placeholder="Parent or guardian name">
+            </div>
+
+            <div class="field-group">
+                <label for="guardian_mobile">Guardian Mobile</label>
+                <input id="guardian_mobile" type="text" name="guardian_mobile" placeholder="Guardian contact number">
+            </div>
+
+            <div class="field-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" name="email" placeholder="student@example.com">
+            </div>
+
+            <div class="field-group">
+                <label for="qualification">Qualification / Class</label>
+                <input id="qualification" type="text" name="qualification" placeholder="e.g. BCA, 12th, B.Com">
+            </div>
+
+            <div class="field-group">
+                <label for="dob">Date of Birth</label>
+                <input id="dob" type="date" name="dob">
+            </div>
+
+            <div class="field-group">
+                <label for="joining_date">Joining Date</label>
+                <input id="joining_date" type="date" name="joining_date">
+            </div>
+
+            <div class="field-group">
+                <label for="counsellor">Counsellor</label>
+                <select id="counsellor" name="counsellor">
+                    <option value="">-- Select counsellor --</option>
+                    {% for c in counsellors %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="reference_source">Reference Source</label>
+                <input id="reference_source" type="text" name="reference_source" placeholder="Friend, walk-in, social media">
+            </div>
+
+            <div class="field-group">
+                <label for="center">Center</label>
+                <select id="center" name="center">
+                    <option value="">-- Select center --</option>
+                    {% for c in centers %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer">
+                    <option value="">-- Select trainer --</option>
+                    {% for t in trainers %}
+                    <option value="{{ t.id }}">{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="batch">Batch Time</label>
+                <select id="batch" name="batch">
+                    <option value="">-- Select batch --</option>
+                    {% for b in batches %}
+                    <option value="{{ b.id }}">{{ b.time }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group full">
+                <label for="address">Address</label>
+                <textarea id="address" name="address" placeholder="Enter full address"></textarea>
+            </div>
+
+            <div class="field-group full">
+                <label>Select Courses</label>
+                <div class="course-grid">
+                    {% for course in courses %}
+                    <label class="course-option">
+                        <input type="checkbox" name="courses" value="{{ course.id }}">
+                        <span>{{ course.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="helper-text">Choose one or more courses for the student.</div>
+            </div>
+        </div>
+
+        <h3 class="section-title" style="margin-top: 24px;">Fee Details</h3>
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="course_fee">Total Course Fee</label>
+                <input id="course_fee" type="number" min="0" name="course_fee" placeholder="Enter full fee amount">
+            </div>
+
+            <div class="field-group">
+                <label for="paid_fee">Paid Fee</label>
+                <input id="paid_fee" type="number" min="0" name="paid_fee" placeholder="Enter amount already received">
+            </div>
+        </div>
+
+        <div class="fee-summary">
+            Remaining Fee
+            <strong id="remaining-fee">0</strong>
+        </div>
+
+        <div>
+            <button class="submit-btn" type="submit">Register Student</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateFeeSummary() {
+    const total = parseInt(document.getElementById('course_fee').value || '0', 10);
+    const paid = parseInt(document.getElementById('paid_fee').value || '0', 10);
+    const remaining = Math.max(total - paid, 0);
+    document.getElementById('remaining-fee').innerText = remaining;
+}
+
+document.getElementById('course_fee').addEventListener('input', updateFeeSummary);
+document.getElementById('paid_fee').addEventListener('input', updateFeeSummary);
+updateFeeSummary();
+</script>
 {% endblock %}

@@ -51,14 +51,30 @@ class StudentCourse(models.Model):
         return f"{self.student.name} - {self.course.name}"
 
 class Installment(models.Model):
+    PAYMENT_MODE_CHOICES = [
+        ('cash', 'Cash'),
+        ('upi', 'UPI'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank Transfer'),
+    ]
+
     student = models.ForeignKey('Student', on_delete=models.CASCADE)
 
     installment_no = models.PositiveIntegerField()
     installment_date = models.DateField()
     amount = models.IntegerField()
+    payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODE_CHOICES, default='cash')
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
 
     class Meta:
         unique_together = ('student', 'installment_no')  # prevents duplicate installment numbers
+
+    def save(self, *args, **kwargs):
+        if not self.installment_no:
+            last_installment = Installment.objects.filter(student=self.student).order_by('-installment_no').first()
+            self.installment_no = 1 if last_installment is None else last_installment.installment_no + 1
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.student.name} - Installment {self.installment_no}"
@@ -123,6 +139,12 @@ class Student(models.Model):
     name = models.CharField(max_length=100)
     mobile_no = models.CharField(max_length=15)
     alt_mobile_no = models.CharField(max_length=15, null=True, blank=True)
+    guardian_name = models.CharField(max_length=100, null=True, blank=True)
+    guardian_mobile = models.CharField(max_length=15, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    qualification = models.CharField(max_length=100, null=True, blank=True)
+    address = models.TextField(null=True, blank=True)
+    reference_source = models.CharField(max_length=100, null=True, blank=True)
 
     dob = models.DateField(null=True, blank=True)
     joining_date = models.DateField(null=True, blank=True)

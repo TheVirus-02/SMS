@@ -1,143 +1,419 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .detail-shell {
+        display: grid;
+        gap: 20px;
+    }
 
+    .hero-card,
+    .info-card,
+    .table-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
+    .hero-card {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+    }
 
-{% if messages %}
-    {% for message in messages %}
-        <p style="color: green; font-weight: bold;">
-            {{ message }}
-        </p>
-    {% endfor %}
-{% endif %}
-<h2>Student Details</h2>
+    .hero-row,
+    .metrics-grid,
+    .detail-grid {
+        display: grid;
+        gap: 16px;
+    }
 
-<p><b>ID:</b> {{ student.student_id }}</p>
-<p><b>Name:</b> {{ student.name }}</p>
-<p><b>Mobile:</b> {{ student.mobile_no }}</p>
-<p><b>Counsellor:</b> {{ student.counsellor.name }}</p>
-<p><b>Courses:</b>
-    {% for course in student.courses.all %}
-        {{ course.name }}{% if not forloop.last %}, {% endif %}
-    {% endfor %}
-</p>
-<p><b>Trainer:</b> {{ student.trainer.name }}</p>
-<p><b>Batch:</b> {{ student.batch.time }}</p>
-<p><b>Center:</b> {{ student.center.name }}</p>
-<p><b>Status:</b> {{ student.get_status_display }}</p>
-<hr>
-<h3>Courses Details</h3>
+    .hero-row {
+        grid-template-columns: 2fr 1fr;
+        align-items: end;
+    }
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Course</th>
-        <th>Status</th>
-        <th>Completion Date</th>
-    </tr>
+    .metrics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
 
-    {% for sc in student.studentcourse_set.all %}
-    <tr>
-        <td>{{ sc.course.name }}</td>
+    .metric-box {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 14px;
+        padding: 14px;
+    }
 
-        <td>
-            {% if sc.is_completed %}
-                <span style="color:green;">✅ Completed</span>
-            {% else %}
-                <span style="color:red;">❌ Ongoing</span>
-            {% endif %}
-        </td>
+    .metric-box strong {
+        display: block;
+        font-size: 28px;
+        margin-top: 6px;
+    }
 
-        <td>
-            {% if sc.completion_date %}
-                {{ sc.completion_date }}
-            {% else %}
-                -
-            {% endif %}
-        </td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan="3">No courses assigned</td>
-    </tr>
-    {% endfor %}
-</table>
-<br><br>
-<hr>
+    .detail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 
-<h3>Fee Summary</h3>
+    .info-list {
+        display: grid;
+        gap: 10px;
+    }
 
-<p>Total Fee: {{ student.course_fee }}</p>
+    .info-item {
+        display: grid;
+        gap: 4px;
+        padding: 12px 14px;
+        border: 1px solid #e3e8ef;
+        border-radius: 12px;
+        background: #fbfcfe;
+    }
 
-<p>Admission Paid Fee: {{ student.paid_fee }}</p>
+    .info-item span {
+        color: #607080;
+        font-size: 13px;
+    }
 
-<p>Installment Paid: {{ student.installment_total }}</p>
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 13px;
+        background: #e6f4ea;
+        color: #1f7a3d;
+    }
 
-<p><b>Total Paid:</b> {{ student.total_paid }}</p>
+    .status-chip.pending {
+        background: #fff2e2;
+        color: #af6a00;
+    }
 
-<p><b>Remaining:</b> {{ student.remaining_fee }}</p>
+    .status-chip.partial {
+        background: #fff1cc;
+        color: #9a6a00;
+    }
 
-<br><br>
-<hr>
+    .status-chip.inactive {
+        background: #eef2f7;
+        color: #4d5b6a;
+    }
 
-<p>
-    <b>Status:</b>
-    {% if student.payment_status == "Paid" %}
-        <span style="color:green;">Paid ✅</span>
-    {% elif student.payment_status == "Partial" %}
-        <span style="color:orange;">Partial ⚠️</span>
-    {% else %}
-        <span style="color:red;">Pending ❌</span>
+    .status-chip.leave {
+        background: #fff2f2;
+        color: #b23a3a;
+    }
+
+    .course-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .course-tag {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #eef6fb;
+        color: #0f4c81;
+        font-weight: 600;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .month-calendar {
+        border: 1px solid #dfe6ee;
+        border-radius: 18px;
+        overflow: hidden;
+    }
+
+    .calendar-header,
+    .calendar-week {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .calendar-header {
+        background: #f4f7fb;
+        border-bottom: 1px solid #dfe6ee;
+    }
+
+    .calendar-header div {
+        padding: 12px 10px;
+        text-align: center;
+        font-weight: 700;
+        color: #4f6072;
+    }
+
+    .calendar-week + .calendar-week {
+        border-top: 1px solid #edf1f5;
+    }
+
+    .calendar-cell {
+        min-height: 92px;
+        padding: 10px;
+        border-right: 1px solid #edf1f5;
+        background: #fff;
+        display: grid;
+        align-content: start;
+        gap: 8px;
+    }
+
+    .calendar-week .calendar-cell:last-child {
+        border-right: 0;
+    }
+
+    .calendar-cell.outside {
+        background: #f8fafc;
+        color: #a4afbb;
+    }
+
+    .calendar-cell.present {
+        background: #1f7a3d;
+        color: #fff;
+    }
+
+    .calendar-cell.absent {
+        background: #fff1f1;
+        color: #8f2f2f;
+    }
+
+    .calendar-cell.leave {
+        background: #fff8dd;
+        color: #8a6a00;
+    }
+
+    .calendar-day-number {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .calendar-day-status {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #e6ebf1;
+        text-align: left;
+    }
+
+    th {
+        background: #f5f8fb;
+    }
+
+    .attendance-present {
+        background: #e9f7ec;
+    }
+
+    .attendance-absent {
+        background: #fff0f0;
+    }
+
+    .attendance-leave {
+        background: #fff8dd;
+    }
+
+    .empty-text {
+        color: #66768a;
+        margin: 0;
+    }
+
+    @media (max-width: 820px) {
+        .hero-row,
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="detail-shell">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="info-card" style="border-left: 4px solid #1f7a3d;">{{ message }}</div>
+        {% endfor %}
     {% endif %}
-</p>
 
+    <div class="hero-card">
+        <div class="hero-row">
+            <div>
+                <div style="opacity: 0.85;">Student Profile</div>
+                <h2 style="margin: 8px 0 6px;">{{ student.name }}</h2>
+                <div>ID: {{ student.student_id }}</div>
+                <div style="margin-top: 12px;">
+                    <span class="status-chip {% if student.status == 'inactive' or student.status == 'completed' %}inactive{% elif student.status == 'leave' %}leave{% endif %}">
+                        {{ student.get_status_display }}
+                    </span>
+                    <span class="status-chip {% if student.payment_status == 'Pending' %}pending{% elif student.payment_status == 'Partial' %}partial{% endif %}" style="margin-left: 8px;">
+                        {{ student.payment_status }}
+                    </span>
+                </div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    Total Paid
+                    <strong>{{ student.total_paid }}</strong>
+                </div>
+                <div class="metric-box">
+                    Remaining Fee
+                    <strong>{{ student.remaining_fee }}</strong>
+                </div>
+                <div class="metric-box">
+                    Present Days
+                    <strong>{{ student.total_present }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="detail-grid">
+        <div class="info-card">
+            <h3 style="margin-top: 0;">Contact and Personal Details</h3>
+            <div class="info-list">
+                <div class="info-item"><span>Mobile Number</span><strong>{{ student.mobile_no|default:"-" }}</strong></div>
+                <div class="info-item"><span>Alternative Mobile</span><strong>{{ student.alt_mobile_no|default:"-" }}</strong></div>
+                <div class="info-item"><span>Guardian Name</span><strong>{{ student.guardian_name|default:"-" }}</strong></div>
+                <div class="info-item"><span>Guardian Mobile</span><strong>{{ student.guardian_mobile|default:"-" }}</strong></div>
+                <div class="info-item"><span>Email</span><strong>{{ student.email|default:"-" }}</strong></div>
+                <div class="info-item"><span>Date of Birth</span><strong>{{ student.dob|default:"-" }}</strong></div>
+                <div class="info-item"><span>Qualification / Class</span><strong>{{ student.qualification|default:"-" }}</strong></div>
+                <div class="info-item"><span>Address</span><strong>{{ student.address|default:"-" }}</strong></div>
+            </div>
+        </div>
 
-<!--Installment Table-->
-<h3>Installments</h3>
+        <div class="info-card">
+            <h3 style="margin-top: 0;">Academic and Assignment Details</h3>
+            <div class="info-list">
+                <div class="info-item"><span>Counsellor</span><strong>{{ student.counsellor.name|default:"-" }}</strong></div>
+                <div class="info-item"><span>Joining Date</span><strong>{{ student.joining_date|default:"-" }}</strong></div>
+                <div class="info-item"><span>Trainer</span><strong>{{ student.trainer.name|default:"-" }}</strong></div>
+                <div class="info-item"><span>Batch</span><strong>{{ student.batch.time|default:"-" }}</strong></div>
+                <div class="info-item"><span>Center</span><strong>{{ student.center.name|default:"-" }}</strong></div>
+                <div class="info-item"><span>Reference Source</span><strong>{{ student.reference_source|default:"-" }}</strong></div>
+                <div class="info-item">
+                    <span>Courses</span>
+                    <strong>
+                        {% if student.courses.all %}
+                        <div class="course-tags">
+                            {% for course in student.courses.all %}
+                            <span class="course-tag">{{ course.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>No</th>
-        <th>Date</th>
-        <th>Amount</th>
-    </tr>
+    <div class="info-card">
+        <h3 style="margin-top: 0;">Fee Summary</h3>
+        <div class="info-list">
+            <div class="info-item"><span>Total Fee</span><strong>{{ student.course_fee|default:0 }}</strong></div>
+            <div class="info-item"><span>Admission Paid Fee</span><strong>{{ student.paid_fee|default:0 }}</strong></div>
+            <div class="info-item"><span>Installment Paid</span><strong>{{ student.installment_total }}</strong></div>
+            <div class="info-item"><span>Total Paid</span><strong>{{ student.total_paid }}</strong></div>
+            <div class="info-item"><span>Remaining Fee</span><strong>{{ student.remaining_fee }}</strong></div>
+        </div>
+    </div>
 
-    {% for ins in student.installment_set.all %}
-    <tr>
-        <td>{{ ins.installment_no }}</td>
-        <td>{{ ins.installment_date }}</td>
-        <td>{{ ins.amount }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="table-card">
+        <h3 style="margin-top: 0;">Course Progress</h3>
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Course</th>
+                    <th>Status</th>
+                    <th>Completion Date</th>
+                </tr>
+                {% for sc in student.studentcourse_set.all %}
+                <tr>
+                    <td>{{ sc.course.name }}</td>
+                    <td>
+                        {% if sc.is_completed %}
+                            <span class="status-chip">Completed</span>
+                        {% else %}
+                            <span class="status-chip pending">Ongoing</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ sc.completion_date|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No courses assigned.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
 
-<br><br>
+    <div class="table-card">
+        <h3 style="margin-top: 0;">Installments</h3>
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>No</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Mode</th>
+                    <th>Reference</th>
+                    <th>Remarks</th>
+                </tr>
+                {% for ins in student.installment_set.all %}
+                <tr>
+                    <td>{{ ins.installment_no }}</td>
+                    <td>{{ ins.installment_date }}</td>
+                    <td>{{ ins.amount }}</td>
+                    <td>{{ ins.get_payment_mode_display }}</td>
+                    <td>{{ ins.transaction_id|default:"-" }}</td>
+                    <td>{{ ins.remarks|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">No installments recorded.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
 
-<hr>
-<h2>{{ student.name }} - Attendance</h2>
-
-<table border="1" cellpadding="10">
-
-    <tr>
-        <th>Date</th>
-        <th>Status</th>
-    </tr>
-
-    {% for a in attendance %}
-    <tr style="
-        {% if a.status == 'present' %}background-color: lightgreen;
-        {% elif a.status == 'absent' %}background-color: lightcoral;
-        {% else %}background-color: lightyellow;
-        {% endif %}
-    ">
-        <td>{{ a.date }}</td>
-        <td>{{ a.status }}</td>
-    </tr>
-    {% endfor %}
-
-</table>
-
-
-
+    <div class="table-card">
+        <h3 style="margin-top: 0;">Attendance History</h3>
+        <p class="empty-text" style="margin-bottom: 14px;">{{ calendar_month_label }}</p>
+        <div class="month-calendar">
+            <div class="calendar-header">
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+                <div>Sun</div>
+            </div>
+            {% for week in attendance_calendar %}
+            <div class="calendar-week">
+                {% for cell in week %}
+                <div class="calendar-cell {% if not cell.in_month %}outside{% elif cell.status %}{{ cell.status }}{% endif %}">
+                    <div class="calendar-day-number">{{ cell.day.day }}</div>
+                    {% if cell.status %}
+                    <div class="calendar-day-status">{{ cell.status }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
 {% endblock %}

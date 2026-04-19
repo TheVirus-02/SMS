@@ -4,6 +4,7 @@ from django.db.models import Q,Count
 from django.core.exceptions import ValidationError
 from .models import Student, Course, Counsellor, Trainer, Batch, Center, StudentCourse, Installment, Attendance, \
     TrainerSchedule, CenterLogistics
+import calendar
 from datetime import date, datetime
 from django.http import JsonResponse
 from django.contrib import messages
@@ -23,12 +24,19 @@ def student_registration(request):
     trainers = Trainer.objects.all()
     batches = Batch.objects.all()
     centers = Center.objects.all()
+    status_choices = Student.STATUS_CHOICES
 
     if request.method == 'POST':
         name = request.POST.get('name')
         counsellor_id = request.POST.get('counsellor')
         mobile = request.POST.get('mobile_no')
         alt_mobile = request.POST.get('alt_mobile_no')
+        guardian_name = request.POST.get('guardian_name')
+        guardian_mobile = request.POST.get('guardian_mobile')
+        email = request.POST.get('email')
+        qualification = request.POST.get('qualification')
+        address = request.POST.get('address')
+        reference_source = request.POST.get('reference_source')
         dob = request.POST.get('dob')
         joining_date = request.POST.get('joining_date')
         selected_courses = request.POST.getlist('courses')
@@ -37,12 +45,19 @@ def student_registration(request):
         trainer_id = request.POST.get('trainer')
         batch_id = request.POST.get('batch')
         center_id = request.POST.get('center')
+        status = request.POST.get('status') or 'active'
 
 
         student = Student.objects.create(
             name=name,
             mobile_no=mobile,
             alt_mobile_no=alt_mobile,
+            guardian_name=guardian_name,
+            guardian_mobile=guardian_mobile,
+            email=email,
+            qualification=qualification,
+            address=address,
+            reference_source=reference_source,
             dob=dob,
             joining_date=joining_date,
             counsellor_id=counsellor_id,
@@ -50,7 +65,8 @@ def student_registration(request):
             paid_fee=paid_fee,
             trainer_id=trainer_id,
             batch_id=batch_id,
-            center_id=center_id
+            center_id=center_id,
+            status=status
         )
         student.courses.set(selected_courses)
         # ✅ SUCCESS MESSAGE
@@ -58,7 +74,14 @@ def student_registration(request):
         return redirect('student_detail', id=student.id)
 
 
-    return render(request, 'student-registration.html',{'courses': courses,'counsellors': counsellors,'trainers': trainers, 'batches': batches,'centers': centers})
+    return render(request, 'student-registration.html', {
+        'courses': courses,
+        'counsellors': counsellors,
+        'trainers': trainers,
+        'batches': batches,
+        'centers': centers,
+        'status_choices': status_choices,
+    })
 
 
 
@@ -114,6 +137,25 @@ def student_detail(request, id):
         for a in Attendance.objects.filter(date=today)
     }
     attendance = Attendance.objects.filter(student=student).order_by('-date')
+    month_days = calendar.Calendar(firstweekday=0).monthdatescalendar(today.year, today.month)
+    attendance_map = {
+        record.date: record.status
+        for record in Attendance.objects.filter(
+            student=student,
+            date__year=today.year,
+            date__month=today.month,
+        )
+    }
+    attendance_calendar = []
+    for week in month_days:
+        week_cells = []
+        for day in week:
+            week_cells.append({
+                'day': day,
+                'in_month': day.month == today.month,
+                'status': attendance_map.get(day),
+            })
+        attendance_calendar.append(week_cells)
     if request.method == "POST":
         trainer_id = request.POST.get('trainer')
         batch_id = request.POST.get('batch')
@@ -135,6 +177,8 @@ def student_detail(request, id):
         'centers': centers,
         "attendance_dict": attendance_dict,
         'attendance': attendance,
+        'attendance_calendar': attendance_calendar,
+        'calendar_month_label': today.strftime('%B %Y'),
         'show_student_nav': True
     })
 def update_student(request, id):
@@ -144,10 +188,21 @@ def update_student(request, id):
     batches = Batch.objects.all()
     centers = Center.objects.all()
     courses = Course.objects.all()
+    counsellors = Counsellor.objects.all()
 
     if request.method == "POST":
         student.name = request.POST.get('name')
         student.mobile_no = request.POST.get('mobile_no')
+        student.alt_mobile_no = request.POST.get('alt_mobile_no')
+        student.guardian_name = request.POST.get('guardian_name')
+        student.guardian_mobile = request.POST.get('guardian_mobile')
+        student.email = request.POST.get('email')
+        student.qualification = request.POST.get('qualification')
+        student.address = request.POST.get('address')
+        student.reference_source = request.POST.get('reference_source')
+        student.dob = request.POST.get('dob') or None
+        student.joining_date = request.POST.get('joining_date') or None
+        student.counsellor_id = request.POST.get('counsellor') or None
         student.trainer_id = request.POST.get('trainer')
         student.batch_id = request.POST.get('batch')
         student.center_id = request.POST.get('center')
@@ -190,23 +245,34 @@ def update_student(request, id):
         'batches': batches,
         'centers': centers,
         'courses': courses,
+        'counsellors': counsellors,
         'show_student_nav': True
     })
 
 def add_installment(request, student_id):
     student = get_object_or_404(Student, id=student_id)
+    last_installment = Installment.objects.filter(student=student).order_by('-installment_no').first()
+    next_installment_no = 1 if last_installment is None else last_installment.installment_no + 1
 
     if request.method == "POST":
         Installment.objects.create(
             student=student,
-            installment_no=request.POST.get('installment_no'),
+            installment_no=next_installment_no,
             installment_date=request.POST.get('installment_date'),
-            amount=request.POST.get('amount')
+            amount=request.POST.get('amount'),
+            payment_mode=request.POST.get('payment_mode') or 'cash',
+            transaction_id=request.POST.get('transaction_id'),
+            remarks=request.POST.get('remarks'),
         )
 
         return redirect('student_detail', id=student.id)
 
-    return render(request, 'installment_add.html', {'student': student,'show_student_nav': True})
+    return render(request, 'installment_add.html', {
+        'student': student,
+        'next_installment_no': next_installment_no,
+        'payment_mode_choices': Installment.PAYMENT_MODE_CHOICES,
+        'show_student_nav': True,
+    })
 
 
 def trainer_batches(request, trainer_id):
