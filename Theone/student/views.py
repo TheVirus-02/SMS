@@ -125,6 +125,62 @@ def record(request):
     return render(request, 'record.html',{'students':students,'status_filter': status_filter,'search': search})
 
 
+def record(request):
+    students_qs = Student.objects.select_related(
+        'counsellor', 'trainer', 'batch', 'center'
+    ).prefetch_related('courses').all()
+    query = request.GET.get('q', '').strip()
+    payment_filter = request.GET.get('payment_status', '').strip()
+    student_status = request.GET.get('student_status', '').strip()
+    trainer_id = request.GET.get('trainer', '').strip()
+    center_id = request.GET.get('center', '').strip()
+
+    if query:
+        students_qs = students_qs.filter(
+            Q(student_id__icontains=query) |
+            Q(name__icontains=query) |
+            Q(mobile_no__icontains=query) |
+            Q(guardian_mobile__icontains=query) |
+            Q(counsellor__name__icontains=query) |
+            Q(trainer__name__icontains=query) |
+            Q(center__name__icontains=query) |
+            Q(courses__name__icontains=query)
+        ).distinct()
+
+    if student_status:
+        students_qs = students_qs.filter(status=student_status)
+
+    if trainer_id:
+        students_qs = students_qs.filter(trainer_id=trainer_id)
+
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+
+    students = list(students_qs)
+    if payment_filter == "Paid":
+        students = [student for student in students if student.remaining_fee == 0 and student.course_fee]
+    elif payment_filter == "Pending":
+        students = [student for student in students if student.total_paid == 0]
+    elif payment_filter == "Partial":
+        students = [student for student in students if 0 < student.remaining_fee < (student.course_fee or 0)]
+
+    return render(request, 'record.html', {
+        'students': students,
+        'query': query,
+        'payment_filter': payment_filter,
+        'student_status': student_status,
+        'trainer_id': trainer_id,
+        'center_id': center_id,
+        'trainers': Trainer.objects.all(),
+        'centers': Center.objects.all(),
+        'status_choices': Student.STATUS_CHOICES,
+        'total_records': len(students),
+        'paid_count': sum(1 for student in students if student.payment_status == "Paid"),
+        'partial_count': sum(1 for student in students if student.payment_status == "Partial"),
+        'pending_count': sum(1 for student in students if student.payment_status == "Pending"),
+    })
+
+
 def student_detail(request, id):
     from datetime import date
     student = get_object_or_404(Student, id=id)

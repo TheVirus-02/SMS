@@ -1,92 +1,319 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<h1> Student Record</h1>
+<style>
+    .records-shell {
+        display: grid;
+        gap: 20px;
+    }
 
-<form method="GET">
-    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-    <input type="text" name="q" placeholder="Search student...">
-    <button type="submit">Search</button>
-</form>
+    .hero-card,
+    .filter-card,
+    .table-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
-<form method="GET">
+    .hero-card {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+    }
 
-    <!-- Search -->
-    <input type="text" name="search" placeholder="Search name or status"
-           value="{{ search }}">
+    .hero-card h1 {
+        margin: 0 0 8px;
+    }
 
-    <!-- Status Filter -->
-    <select name="status">
-        <option value="">All</option>
-        <option value="Paid" {% if status_filter == "Paid" %}selected{% endif %}>Paid</option>
-        <option value="Partial" {% if status_filter == "Partial" %}selected{% endif %}>Partial</option>
-        <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
-    </select>
+    .stats-grid,
+    .filter-grid {
+        display: grid;
+        gap: 16px;
+    }
 
-    <button type="submit">Filter</button>
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        margin-top: 18px;
+    }
 
-</form>
+    .stat-box {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 14px;
+        padding: 14px;
+    }
 
-<br><br>
+    .stat-box strong {
+        display: block;
+        font-size: 28px;
+        margin-top: 6px;
+    }
 
-<!--Static Table-->
-  <table border="1">
-      <tr>
-          <th>Student ID</th>
-          <th>Name</th>
-          <th>Mobile No</th>
+    .filter-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
 
-        <th>Counsellor</th>
-          <th>Trainer Name</th>
-          <th>Batch-time</th>
-          <th>Center Name</th>
-          <th>Total Fee</th>
-<th>Paid Fee</th>
-<th>Remaining Fee</th>
-<th>Fee Status</th>
-<th>Status</th>
-      </tr>
-      {% for student in students %}
-      <tr>
-          <td>{{ student.student_id }}</td>
-          <td> <a href="{% url 'student_detail' student.id %}">
-        {{ student.name }}
-    </a></td>
-          <td>{{student.mobile_no}}</td>
+    .field-group {
+        display: grid;
+        gap: 6px;
+    }
 
+    .field-group label {
+        font-weight: 600;
+        color: #17324d;
+    }
 
+    .field-group input,
+    .field-group select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        background: #f9fbfd;
+    }
 
-        <td>{{ student.counsellor.name}}</td>
+    .actions-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+    }
 
+    .action-btn,
+    .clear-link {
+        display: inline-block;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        text-decoration: none;
+    }
 
+    .action-btn {
+        border: 0;
+        background: #17324d;
+        color: #fff;
+        cursor: pointer;
+    }
 
- <td>{{ student.trainer.name }}</td>
-        <td>{{ student.batch.time }}</td>
-        <td>{{ student.center.name }}</td>
-          <td>{{ student.course_fee }}</td>
-<td>{{ student.paid_fee }}</td>
+    .clear-link {
+        background: #eef2f7;
+        color: #17324d;
+    }
 
-<td>{{ student.remaining_fee }}</td>
-<td>
-    {% if student.payment_status == "Paid" %}
-        <span style="color:green;">Paid</span>
-    {% elif student.payment_status == "Partial" %}
-        <span style="color:orange;">Partial</span>
-    {% else %}
-        <span style="color:red;">Pending</span>
-    {% endif %}
-</td>
+    .table-wrap {
+        overflow-x: auto;
+    }
 
-<td>{{ student.get_status_display }}</td>
-      </tr>
-       {% endfor %}
-  </table>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
 
+    th,
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #e6ebf1;
+        text-align: left;
+        vertical-align: top;
+    }
 
+    th {
+        background: #f5f8fb;
+        color: #17324d;
+    }
 
+    .student-link {
+        color: #17324d;
+        font-weight: 700;
+        text-decoration: none;
+    }
 
+    .course-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
 
+    .course-tag {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #eef6fb;
+        color: #0f4c81;
+        font-size: 12px;
+        font-weight: 600;
+    }
 
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
 
+    .paid {
+        background: #e6f4ea;
+        color: #1f7a3d;
+    }
 
+    .partial {
+        background: #fff1cc;
+        color: #9a6a00;
+    }
 
+    .pending {
+        background: #fff0f0;
+        color: #b23a3a;
+    }
+
+    .meta-text {
+        color: #647487;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        color: #647487;
+        margin: 0;
+    }
+
+    @media (max-width: 820px) {
+        .actions-row {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="records-shell">
+    <div class="hero-card">
+        <h1>Student Records</h1>
+        <div>Use focused search and operational filters to find the right student quickly.</div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                Records
+                <strong>{{ total_records }}</strong>
+            </div>
+            <div class="stat-box">
+                Paid
+                <strong>{{ paid_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Partial
+                <strong>{{ partial_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Pending
+                <strong>{{ pending_count }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <form method="GET" class="filter-card">
+        <h3 style="margin-top: 0;">Search and Filters</h3>
+        <div class="filter-grid">
+            <div class="field-group">
+                <label for="q">Search</label>
+                <input id="q" type="text" name="q" value="{{ query }}" placeholder="ID, name, mobile, trainer, center, course">
+            </div>
+
+            <div class="field-group">
+                <label for="payment_status">Payment Status</label>
+                <select id="payment_status" name="payment_status">
+                    <option value="">All</option>
+                    <option value="Paid" {% if payment_filter == "Paid" %}selected{% endif %}>Paid</option>
+                    <option value="Partial" {% if payment_filter == "Partial" %}selected{% endif %}>Partial</option>
+                    <option value="Pending" {% if payment_filter == "Pending" %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="student_status">Student Status</label>
+                <select id="student_status" name="student_status">
+                    <option value="">All</option>
+                    {% for key, label in status_choices %}
+                    <option value="{{ key }}" {% if student_status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer">
+                    <option value="">All</option>
+                    {% for trainer in trainers %}
+                    <option value="{{ trainer.id }}" {% if trainer_id == trainer.id|stringformat:"s" %}selected{% endif %}>{{ trainer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="center">Center</label>
+                <select id="center" name="center">
+                    <option value="">All</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}" {% if center_id == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="actions-row">
+            <button class="action-btn" type="submit">Apply Filters</button>
+            <a class="clear-link" href="{% url 'record' %}">Clear Filters</a>
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Student</th>
+                    <th>Courses</th>
+                    <th>Trainer / Center</th>
+                    <th>Fee Snapshot</th>
+                    <th>Status</th>
+                </tr>
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <a class="student-link" href="{% url 'student_detail' student.id %}">{{ student.name }}</a>
+                        <div class="meta-text">{{ student.student_id }}</div>
+                        <div class="meta-text">{{ student.mobile_no|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <div class="course-list">
+                            {% for course in student.courses.all %}
+                            <span class="course-tag">{{ course.name }}</span>
+                            {% empty %}
+                            <span class="meta-text">No courses</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <div><strong>{{ student.trainer.name|default:"-" }}</strong></div>
+                        <div class="meta-text">{{ student.center.name|default:"-" }}</div>
+                        <div class="meta-text">{{ student.batch.time|default:"-" }}</div>
+                    </td>
+                    <td>
+                        <div><strong>Total:</strong> {{ student.course_fee|default:0 }}</div>
+                        <div><strong>Paid:</strong> {{ student.total_paid }}</div>
+                        <div><strong>Remaining:</strong> {{ student.remaining_fee }}</div>
+                    </td>
+                    <td>
+                        <div>
+                            <span class="status-chip {% if student.payment_status == 'Paid' %}paid{% elif student.payment_status == 'Partial' %}partial{% else %}pending{% endif %}">
+                                {{ student.payment_status }}
+                            </span>
+                        </div>
+                        <div class="meta-text" style="margin-top: 8px;">{{ student.get_status_display }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5"><p class="empty-state">No student records matched the current filters.</p></td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
