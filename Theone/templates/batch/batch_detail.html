@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .panel-card, .message-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .message-card { background:#eef6fb; border-left:4px solid #17324d; }
+    .stats-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; }
+    .stat-pill { background:rgba(255,255,255,0.18); color:#fff; border-radius:999px; padding:8px 14px; font-weight:700; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .center-card { border:1px solid #dce6ef; border-radius:14px; padding:14px; background:#fbfdff; }
+    .center-card + .center-card { margin-top:12px; }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="message-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{{ batch }}</h2>
+        <p style="margin:0;">Manage batch details and trainer-center allocations from one place.</p>
+        <div class="stats-row">
+            <span class="stat-pill">{{ schedules|length }} Allocation{{ schedules|length|pluralize }}</span>
+            <span class="stat-pill">{{ students|length }} Student{{ students|length|pluralize }}</span>
+        </div>
+        <div class="action-row">
+            <a class="btn" href="{% url 'add_batch_assignment' batch.id %}">Add Trainer Allocation</a>
+            <a class="secondary-link" href="{% url 'update_batch' batch.id %}">Edit Batch</a>
+            <a class="secondary-link" href="{% url 'batch_list' %}">Back to Batch System</a>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <h3 style="margin-top:0;">Trainer-Center Allocations</h3>
+        <table>
+            <tr>
+                <th>Center</th>
+                <th>Trainer</th>
+                <th>Time</th>
+                <th>Action</th>
+            </tr>
+            {% for schedule in schedules %}
+            <tr>
+                <td>{{ schedule.center.name|default:"Center Pending" }}</td>
+                <td><a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a></td>
+                <td>{{ schedule.start_time|time:"h:i A" }} - {{ schedule.end_time|time:"h:i A" }}</td>
+                <td>
+                    <a href="{% url 'update_batch_assignment' schedule.id %}">Edit</a> |
+                    <a href="{% url 'delete_batch_assignment' schedule.id %}" onclick="return confirm('Delete this batch allocation?')">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No trainer-center allocation added yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="panel-card">
+        <h3 style="margin-top:0;">Center Summary</h3>
+        {% for item in center_summary %}
+        <div class="center-card">
+            <strong>{{ item.center.name }}</strong>
+            <div style="margin-top:6px;">Students: {{ item.student_count }}</div>
+            <div style="margin-top:6px;">
+                Trainers:
+                {% for schedule in item.schedules %}
+                    {{ schedule.trainer.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    No trainer allocated
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <p style="margin:0;">No student or trainer allocation is attached to this batch yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

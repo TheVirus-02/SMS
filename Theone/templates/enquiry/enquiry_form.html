@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .form-shell { max-width:1100px; margin:0 auto; display:grid; gap:20px; }
+    .hero-card, .form-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
+    .field-group { display:grid; gap:6px; }
+    .field-group.full { grid-column:1 / -1; }
+    label { font-weight:600; color:#17324d; }
+    input, select, textarea { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    textarea { min-height:96px; resize:vertical; }
+    .error-box, .info-box { padding:14px 16px; border-radius:14px; }
+    .error-box { background:#fff0f0; color:#b23a3a; }
+    .info-box { background:#eef6fb; color:#17324d; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    @media (max-width:900px) { .form-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{% if enquiry %}Update Enquiry{% else %}Add Enquiry{% endif %}</h2>
+        <p style="margin:0;">Capture lead details, follow-up plan, course interest, and admission probability in one place.</p>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+        {% if error %}
+        <div class="error-box">
+            {% for item in error %}
+            <div>{{ item }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <h3 style="margin-top:0;">Basic Details</h3>
+        <div class="form-grid">
+            <div class="field-group"><label for="name">Student Name</label><input id="name" name="name" type="text" value="{{ form_data.name }}" required></div>
+            <div class="field-group"><label for="mobile_no">Mobile Number</label><input id="mobile_no" name="mobile_no" type="text" value="{{ form_data.mobile_no }}" required></div>
+            <div class="field-group"><label for="alt_mobile_no">Alternative Mobile</label><input id="alt_mobile_no" name="alt_mobile_no" type="text" value="{{ form_data.alt_mobile_no }}"></div>
+            <div class="field-group"><label for="guardian_name">Guardian Name</label><input id="guardian_name" name="guardian_name" type="text" value="{{ form_data.guardian_name }}"></div>
+            <div class="field-group"><label for="guardian_mobile">Guardian Mobile</label><input id="guardian_mobile" name="guardian_mobile" type="text" value="{{ form_data.guardian_mobile }}"></div>
+            <div class="field-group"><label for="age">Age</label><input id="age" name="age" type="number" value="{{ form_data.age }}"></div>
+            <div class="field-group"><label for="qualification">Qualification / Class</label><input id="qualification" name="qualification" type="text" value="{{ form_data.qualification }}"></div>
+            <div class="field-group"><label for="source">Enquiry Source</label><input id="source" name="source" type="text" value="{{ form_data.source }}" placeholder="Walk-in, reference, social media"></div>
+            <div class="field-group"><label for="enquiry_date">Enquiry Date</label><input id="enquiry_date" name="enquiry_date" type="date" value="{{ form_data.enquiry_date }}"></div>
+            <div class="field-group"><label for="expected_joining_date">Expected Joining Date</label><input id="expected_joining_date" name="expected_joining_date" type="date" value="{{ form_data.expected_joining_date }}"></div>
+            <div class="field-group full"><label for="address">Address</label><textarea id="address" name="address">{{ form_data.address }}</textarea></div>
+        </div>
+
+        <h3 style="margin-top:24px;">Course Interest</h3>
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="interested_course">Interested Course</label>
+                <select id="interested_course" name="interested_course">
+                    <option value="">Select course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if form_data.interested_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group"><label for="fee_discussed">Fee Discussed</label><input id="fee_discussed" name="fee_discussed" type="number" min="0" value="{{ form_data.fee_discussed }}"></div>
+            <div class="field-group">
+                <label for="preferred_center">Preferred Center</label>
+                <select id="preferred_center" name="preferred_center">
+                    <option value="">Select center</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}" {% if form_data.preferred_center == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="preferred_batch">Preferred Batch</label>
+                <select id="preferred_batch" name="preferred_batch">
+                    <option value="">Select batch</option>
+                    {% for batch in batches %}
+                    <option value="{{ batch.id }}" {% if form_data.preferred_batch == batch.id|stringformat:"s" %}selected{% endif %}>{{ batch }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <h3 style="margin-top:24px;">Tracking</h3>
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="assigned_counsellor">Assigned Counsellor</label>
+                <select id="assigned_counsellor" name="assigned_counsellor">
+                    <option value="">Select counsellor</option>
+                    {% for counsellor in counsellors %}
+                    <option value="{{ counsellor.id }}" {% if form_data.assigned_counsellor == counsellor.id|stringformat:"s" %}selected{% endif %}>{{ counsellor.name }}{% if counsellor.center %} - {{ counsellor.center.name }}{% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if form_data.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group"><label for="next_follow_up_date">Next Follow-up Date</label><input id="next_follow_up_date" name="next_follow_up_date" type="date" value="{{ form_data.next_follow_up_date }}"></div>
+            <div class="field-group"><label for="last_follow_up_date">Last Follow-up Date</label><input id="last_follow_up_date" name="last_follow_up_date" type="date" value="{{ form_data.last_follow_up_date }}"></div>
+            <div class="field-group"><label for="demo_date">Demo Date</label><input id="demo_date" name="demo_date" type="date" value="{{ form_data.demo_date }}"></div>
+            <div class="field-group"><label for="demo_result">Demo Result</label><input id="demo_result" name="demo_result" type="text" value="{{ form_data.demo_result }}"></div>
+            <div class="field-group">
+                <label for="admission_probability">Admission Probability</label>
+                <select id="admission_probability" name="admission_probability">
+                    {% for value, label in probability_choices %}
+                    <option value="{{ value }}" {% if form_data.admission_probability == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group"><label for="lost_reason">Lost Reason</label><input id="lost_reason" name="lost_reason" type="text" value="{{ form_data.lost_reason }}"></div>
+            <div class="field-group full"><label for="follow_up_remarks">Follow-up Remarks</label><textarea id="follow_up_remarks" name="follow_up_remarks">{{ form_data.follow_up_remarks }}</textarea></div>
+        </div>
+
+        <div class="info-box" style="margin-top:18px;">After the enquiry becomes ready, use the conversion action to create the actual student admission record automatically.</div>
+
+        <div class="action-row">
+            <button class="btn" type="submit">{% if enquiry %}Update Enquiry{% else %}Save Enquiry{% endif %}</button>
+            {% if enquiry %}
+            <a class="secondary-link" href="{% url 'enquiry_detail' enquiry.id %}">Back</a>
+            {% else %}
+            <a class="secondary-link" href="{% url 'enquiry_list' %}">Back</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

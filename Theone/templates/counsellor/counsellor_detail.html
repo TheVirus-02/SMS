@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255, 255, 255, 0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; }
+    .info-item { background:#f8fbfd; border:1px solid #dce6ef; border-radius:14px; padding:14px; }
+    .info-item span { display:block; color:#617384; font-size:13px; margin-bottom:6px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .meta { color:#617384; }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{{ counsellor.name }}</h2>
+        <p style="margin:0;">Counsellor profile and the students currently mapped under this counsellor.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'update_counsellor' counsellor.id %}">Edit Counsellor</a>
+            <a class="danger-link" href="{% url 'delete_counsellor' counsellor.id %}" onclick="return confirm('Delete this counsellor?')">Delete Counsellor</a>
+            <a class="secondary-link" href="{% url 'counsellor_list' %}">Back to Counsellors</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                Admissions Handled
+                <strong>{{ student_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Active Students
+                <strong>{{ active_student_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Joined This Month
+                <strong>{{ joined_this_month_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Completed Students
+                <strong>{{ completed_student_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Enquiries
+                <strong>{{ enquiry_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Open Enquiries
+                <strong>{{ open_enquiry_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Today Follow-up
+                <strong>{{ today_follow_up_enquiry_count }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h3 style="margin-top:0;">Counsellor Details</h3>
+        <div class="info-grid">
+            <div class="info-item"><span>Mobile</span><strong>{{ counsellor.mobile|default:"-" }}</strong></div>
+            <div class="info-item"><span>Center</span><strong>{{ counsellor.center.name|default:"-" }}</strong></div>
+            <div class="info-item"><span>Age</span><strong>{{ counsellor.age|default:"-" }}</strong></div>
+            <div class="info-item"><span>Date of Birth</span><strong>{{ counsellor.dob|date:"d M Y"|default:"-" }}</strong></div>
+            <div class="info-item"><span>Joining Date</span><strong>{{ counsellor.joining_date|date:"d M Y"|default:"-" }}</strong></div>
+            <div class="info-item" style="grid-column:1 / -1;"><span>Address</span><strong>{{ counsellor.address|default:"-" }}</strong></div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">Student List</h3>
+            <div class="meta">Total Students: {{ student_count }}</div>
+        </div>
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Center</th>
+                <th>Trainer</th>
+                <th>Batch</th>
+                <th>Status</th>
+            </tr>
+            {% for student in students %}
+            <tr>
+                <td><a href="{% url 'student_detail' student.id %}">{{ student.name }}</a></td>
+                <td>{{ student.center.name|default:"-" }}</td>
+                <td>{{ student.trainer.name|default:"-" }}</td>
+                <td>{{ student.batch|default:"-" }}</td>
+                <td>{{ student.get_status_display }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No student is assigned to this counsellor yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">Recent Enquiries</h3>
+            <div class="meta">Latest 10 enquiries for this counsellor</div>
+        </div>
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Course / Center</th>
+                <th>Status</th>
+                <th>Next Follow-up</th>
+            </tr>
+            {% for enquiry in enquiries %}
+            <tr>
+                <td><a href="{% url 'enquiry_detail' enquiry.id %}">{{ enquiry.name }}</a><br><span class="meta">{{ enquiry.mobile_no }}</span></td>
+                <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                <td>{{ enquiry.get_status_display }}</td>
+                <td>{{ enquiry.next_follow_up_date|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No enquiries are assigned to this counsellor yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

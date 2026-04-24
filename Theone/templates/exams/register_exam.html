@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .exam-grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: 2fr 1fr;
+    }
+
+    .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 10px 28px rgba(18, 39, 63, 0.08);
+    }
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d8e0ea;
+        border-radius: 10px;
+        box-sizing: border-box;
+    }
+
+    .course-option {
+        display: flex;
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border: 1px solid #dfe6ef;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+    .btn {
+        background: #17324d;
+        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        padding: 12px 18px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .muted {
+        color: #617384;
+    }
+
+    .pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #eef5fb;
+        color: #1c5788;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+        .exam-grid,
+        .field-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="card" style="margin-bottom: 16px;">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="exam-grid">
+    <div class="card">
+        <h2 style="margin-top: 0;">Register Exam</h2>
+        <p class="muted">Student: <strong>{{ student.name }}</strong> ({{ student.student_id }})</p>
+        <p class="muted" style="margin-bottom: 18px;">
+            SMS Status:
+            <span class="pill">{{ sms_status.status_label }}</span>
+            | From {{ sms_status.from_number }}
+            | To {{ sms_status.normalized_mobile }}
+            {% if sms_status.missing_fields %}
+                | Missing:
+                {% for item in sms_status.missing_fields %}
+                    {{ item }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            {% endif %}
+        </p>
+
+        {% if completed_courses %}
+            <form method="POST">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 18px;">
+                    <label>Completed Course</label>
+                    {% for sc in completed_courses %}
+                        <label class="course-option">
+                            <input type="radio" name="student_course" value="{{ sc.id }}" {% if forloop.first %}checked{% endif %}>
+                            <span>
+                                <strong>{{ sc.course.name }}</strong><br>
+                                <span class="muted">Completed on {{ sc.completion_date|default:"-" }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <div class="field-grid">
+                    <div>
+                        <label for="exam_date">Exam Date</label>
+                        <input id="exam_date" type="date" name="exam_date" required>
+                    </div>
+                    <div>
+                        <label for="receipt_no">Receipt No</label>
+                        <input id="receipt_no" type="text" name="receipt_no" required>
+                    </div>
+                    <div>
+                        <label for="receipt_issued_by">Receipt Issued By</label>
+                        <select id="receipt_issued_by" name="receipt_issued_by">
+                            <option value="">Select trainer</option>
+                            {% for trainer in trainers %}
+                                <option value="{{ trainer.id }}">{{ trainer.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="receipt_issued_date">Receipt Issued Date</label>
+                        <input id="receipt_issued_date" type="date" name="receipt_issued_date" required>
+                    </div>
+                    <div>
+                        <label for="receipt_amount">Receipt Amount</label>
+                        <input id="receipt_amount" type="number" min="0" name="receipt_amount" required>
+                    </div>
+                    <div>
+                        <label for="payment_method">Payment Method</label>
+                        <select id="payment_method" name="payment_method">
+                            {% for value, label in payment_mode_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="payment_amount">Payment Amount</label>
+                        <input id="payment_amount" type="number" min="0" name="payment_amount" required>
+                    </div>
+                    <div>
+                        <label for="payment_reference">Payment Reference</label>
+                        <input id="payment_reference" type="text" name="payment_reference" placeholder="Txn id / UTR / note">
+                    </div>
+                </div>
+
+                <div style="margin-top: 14px;">
+                    <label for="remarks">Remarks</label>
+                    <textarea id="remarks" name="remarks" rows="4" placeholder="Optional notes"></textarea>
+                </div>
+
+                <button class="btn" type="submit" style="margin-top: 18px;">Save Exam Registration</button>
+            </form>
+        {% else %}
+            <p class="muted">No completed courses are available for exam registration. Complete a course first, or the exam has already been registered.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top: 0;">Existing Exam Records</h3>
+        {% for reg in existing_registrations %}
+            <div style="padding: 12px 0; border-bottom: 1px solid #edf2f7;">
+                <strong>{{ reg.course_name }}</strong><br>
+                <span class="muted">{{ reg.exam_date }} | Receipt {{ reg.receipt_no }}</span><br>
+                <span class="pill">{{ reg.get_payment_method_display }}</span>
+                {% with sms_log=reg.latest_sms_log %}
+                    {% if sms_log %}
+                        <div class="muted" style="margin-top: 6px;">
+                            Message {{ sms_log.get_status_display|lower }} to student on {{ sms_log.created_at|date:"d M Y H:i" }}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        {% empty %}
+            <p class="muted">No exam registration created yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

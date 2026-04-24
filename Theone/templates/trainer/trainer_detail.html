@@ -1,53 +1,118 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .page-shell { display: grid; gap: 20px; }
+    .hero-card, .info-card, .table-card { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); }
+    .hero-card { background: linear-gradient(135deg, #17324d, #2f7f8f); color: #fff; }
+    .action-row, .stat-grid, .detail-grid { display: grid; gap: 14px; }
+    .action-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .stat-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-top: 18px; }
+    .stat-box { background: rgba(255,255,255,0.14); border-radius: 14px; padding: 14px; }
+    .stat-box strong { display: block; font-size: 26px; margin-top: 6px; }
+    .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .info-item { padding: 12px 14px; border: 1px solid #e3e8ef; border-radius: 12px; background: #fbfcfe; }
+    .info-item span { display:block; color:#607080; font-size:13px; margin-bottom:4px; }
+    .btn, .secondary-link, .danger-link { display: inline-block; padding: 11px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; }
+    .btn { background: #17324d; color: #fff; }
+    .secondary-link { background: #eef2f7; color: #17324d; }
+    .danger-link { background: #fff0f0; color: #b23a3a; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #e6ebf1; text-align: left; vertical-align: top; }
+    th { background: #f5f8fb; }
+    .course-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .course-tag { background: #eef6fb; color: #0f4c81; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 600; }
+    .meta { color: #617384; }
+    @media (max-width: 820px) { .detail-grid { grid-template-columns: 1fr; } }
+</style>
 
-<a href="{% url 'update_trainer' trainer.id %}" style="margin-left:20px;">
-    ✏️ Update Trainer
-</a>
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin: 0 0 8px;">{{ trainer.name }}</h2>
+        <p style="margin: 0;">Trainer profile, assigned courses, current student records, and hourly class schedule.</p>
+        <div class="stat-grid">
+            <div class="stat-box">Students<strong>{{ student_count }}</strong></div>
+            <div class="stat-box">Schedules<strong>{{ schedules|length }}</strong></div>
+        </div>
+        <div class="action-row">
+            <a class="btn" href="{% url 'trainer_schedule_page' %}">Open Schedule Page</a>
+            <a class="secondary-link" href="{% url 'add_schedule' trainer.id %}">Add Schedule</a>
+            <a class="secondary-link" href="{% url 'update_trainer' trainer.id %}">Edit Trainer</a>
+            <a class="danger-link" href="{% url 'delete_trainer' trainer.id %}" onclick="return confirm('Delete this trainer?')">Delete Trainer</a>
+        </div>
+    </div>
 
-<h2>{{ trainer.name }}</h2>
+    <div class="detail-grid">
+        <div class="info-card">
+            <h3 style="margin-top: 0;">Trainer Details</h3>
+            <div class="info-item"><span>Mobile</span><strong>{{ trainer.mobile }}</strong></div>
+            <div class="info-item"><span>Age</span><strong>{{ trainer.age|default:"-" }}</strong></div>
+            <div class="info-item"><span>Date of Birth</span><strong>{{ trainer.dob|date:'Y-m-d'|default:"-" }}</strong></div>
+            <div class="info-item"><span>Joining Date</span><strong>{{ trainer.joining_date|date:'Y-m-d'|default:"-" }}</strong></div>
+        </div>
 
-<p>Mobile: {{ trainer.mobile }}</p>
-<p>Joining Date: {{ trainer.joining_date }}</p>
-<p>Date of Birth : {{ trainer.dob|date:'Y-m-d' }}</p>
-<h3>Courses:</h3>
+        <div class="info-card">
+            <h3 style="margin-top: 0;">Courses</h3>
+            <div class="course-tags">
+                {% for course in trainer.courses.all %}
+                <span class="course-tag">{{ course.name }}</span>
+                {% empty %}
+                <span class="meta">No courses assigned.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
-<ul>
-    {% for c in trainer.courses.all %}
-        <li>{{ c.name }}</li>
-    {% empty %}
-        <li>No courses assigned</li>
-    {% endfor %}
-</ul>
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">Trainer Schedule</h3>
+            <a href="{% url 'add_schedule' trainer.id %}">Add One-Hour Slot</a>
+        </div>
+        <table>
+            <tr>
+                <th>Center</th>
+                <th>Batch</th>
+                <th>Time</th>
+                <th>Action</th>
+            </tr>
+            {% for schedule in schedules %}
+            <tr>
+                <td>{{ schedule.center.name|default:"Center Pending" }}</td>
+                <td>{{ schedule.batch }}</td>
+                <td>{{ schedule.start_time|time:"h:i A" }} - {{ schedule.end_time|time:"h:i A" }}</td>
+                <td>
+                    <a href="{% url 'update_schedule' schedule.id %}">Edit</a> |
+                    <a href="{% url 'delete_schedule' schedule.id %}" onclick="return confirm('Delete this schedule?')">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No schedule added yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
-<h3>Schedules</h3>
-
-<a href="{% url 'add_schedule' trainer.id %}">➕ Add Schedule</a>
-
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Center</th>
-        <th>Batch</th>
-        <th>Time</th>
-        <th>Actions</th>
-    </tr>
-
-    {% for s in schedules %}
-    <tr>
-        <td>{{ s.center.name }}</td>
-        <td>{{ s.batch.time|time:"h A" }}</td>
-        <td>{{ s.start_time|time:"h:i A" }} - {{ s.end_time|time:"h:i A" }}</td>
-
-        <td>
-            <a href="{% url 'update_schedule' s.id %}">✏️ Edit</a> |
-            <a href="{% url 'delete_schedule' s.id %}"
-               onclick="return confirm('Delete this schedule?')">
-               ❌ Delete
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
+    <div class="table-card">
+        <h3 style="margin-top: 0;">Assigned Students</h3>
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Center</th>
+                <th>Batch</th>
+            </tr>
+            {% for student in assigned_students %}
+            <tr>
+                <td><a href="{% url 'student_detail' student.id %}">{{ student.name }}</a></td>
+                <td>{{ student.center.name|default:"-" }}</td>
+                <td>{{ student.batch|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No student is assigned to this trainer yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
 {% endblock %}

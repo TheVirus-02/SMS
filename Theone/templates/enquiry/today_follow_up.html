@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; border:0; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .meta { color:#617384; }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Today Follow-up</h2>
+        <p style="margin:0;">Enquiries that need follow-up on {{ today }}.</p>
+        <div class="action-row">
+            <a class="secondary-link" href="{% url 'enquiry_list' %}">Back to Enquiries</a>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">Today Follow-up List</h3>
+            <div class="meta">Total: {{ total_enquiries }}</div>
+        </div>
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Course / Center</th>
+                <th>Counsellor</th>
+                <th>Status</th>
+                <th>Last Follow-up</th>
+                <th>Action</th>
+            </tr>
+            {% for enquiry in enquiries %}
+            <tr>
+                <td><strong>{{ enquiry.name }}</strong><br><span class="meta">{{ enquiry.mobile_no }}</span></td>
+                <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
+                <td>{{ enquiry.get_status_display }}</td>
+                <td>{{ enquiry.last_follow_up_date|default:"-" }}</td>
+                <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">No enquiry is due for follow-up today.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

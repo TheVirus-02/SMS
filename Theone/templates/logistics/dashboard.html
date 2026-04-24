@@ -5,33 +5,168 @@
     {% csrf_token %}
 </form>
 
-<h2>Logistics Dashboard</h2>
-<p>Set the total computers and repair computers for each center. Working computers are calculated automatically.</p>
+<style>
+    .page-shell {
+        display: grid;
+        gap: 20px;
+    }
 
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Center</th>
-        <th>Total PCs</th>
-        <th>Repair PCs</th>
-        <th>Working PCs</th>
-        <th>Action</th>
-    </tr>
-    {% for log in logs %}
-    <tr data-log-id="{{ log.id }}">
-        <td>{{ log.center.name }}</td>
-        <td>
-            <input type="number" min="0" value="{{ log.total_pc }}" data-field="total">
-        </td>
-        <td>
-            <input type="number" min="0" value="{{ log.repair_pc }}" data-field="repair">
-        </td>
-        <td data-field="working">{{ log.working_pc }}</td>
-        <td>
-            <button type="button" onclick="saveLogistics({{ log.id }}, this)">Save</button>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    .hero-card,
+    .summary-card,
+    .table-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .summary-box {
+        background: #f7fbfe;
+        border: 1px solid #dce8f2;
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .summary-box strong {
+        display: block;
+        font-size: 26px;
+        color: #17324d;
+        margin-top: 6px;
+    }
+
+    .meta {
+        color: #617384;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #e6ebf1;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background: #f5f8fb;
+    }
+
+    input {
+        width: 100%;
+        max-width: 120px;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        background: #f9fbfd;
+    }
+
+    .save-btn {
+        border: 0;
+        background: #17324d;
+        color: #fff;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .save-note {
+        font-size: 12px;
+        color: #617384;
+        margin-top: 6px;
+    }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin: 0 0 8px;">Logistics Dashboard</h2>
+        <p style="margin: 0;">This page now tracks two different things clearly: admission capacity and PC availability.</p>
+    </div>
+
+    <div class="summary-card">
+        <h3 style="margin-top: 0;">Overall Summary</h3>
+        <div class="summary-grid">
+            <div class="summary-box">
+                Total Capacity
+                <strong>{{ summary.total_capacity }}</strong>
+                <div class="meta">Used for attendance and remaining place</div>
+            </div>
+            <div class="summary-box">
+                Repair PC
+                <strong>{{ summary.total_repair }}</strong>
+                <div class="meta">Systems currently unavailable</div>
+            </div>
+            <div class="summary-box">
+                Remaining PC
+                <strong>{{ summary.total_remaining_pc }}</strong>
+                <div class="meta">Total capacity minus repair PC</div>
+            </div>
+            <div class="summary-box">
+                Total Students
+                <strong>{{ summary.total_students }}</strong>
+                <div class="meta">Current center allocation</div>
+            </div>
+            <div class="summary-box">
+                Remaining Place
+                <strong>{{ summary.total_remaining_place }}</strong>
+                <div class="meta">Only affected by student count</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h3 style="margin-top: 0;">Center Logistics</h3>
+        <p class="meta" style="margin-top: 0;">
+            `Total Capacity` and `Remaining Place` are for admissions and attendance planning.
+            `Repair PC` and `Remaining PC` are for hardware tracking.
+        </p>
+
+        <table>
+            <tr>
+                <th>Center</th>
+                <th>Total Capacity</th>
+                <th>Repair PC</th>
+                <th>Remaining PC</th>
+                <th>Students</th>
+                <th>Action</th>
+            </tr>
+            {% for row in rows %}
+            <tr data-log-id="{{ row.log.id }}">
+                <td>{{ row.log.center.name }}</td>
+                <td>
+                    <input type="number" min="0" value="{{ row.log.total_capacity }}" data-field="total">
+                </td>
+                <td>
+                    <input type="number" min="0" value="{{ row.log.repair_pc }}" data-field="repair">
+                </td>
+                <td data-field="remaining-pc">{{ row.log.remaining_pc }}</td>
+                <td data-field="students">{{ row.student_count }}</td>
+                <td>
+                    <button type="button" class="save-btn" onclick="saveLogistics({{ row.log.id }}, this)">Save</button>
+                    <div class="save-note" data-note>Not saved yet</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -59,6 +194,7 @@ async function postValue(url, key, value) {
 
 async function saveLogistics(id, button) {
     const row = button.closest('tr');
+    const note = row.querySelector('[data-note]');
     const totalInput = row.querySelector('[data-field="total"]');
     const repairInput = row.querySelector('[data-field="repair"]');
     const totalValue = Math.max(parseInt(totalInput.value || '0', 10), 0);
@@ -66,13 +202,21 @@ async function saveLogistics(id, button) {
 
     try {
         button.disabled = true;
+        note.innerText = 'Saving...';
         await postValue(`/logistics/update-total/${id}/`, 'total_pc', totalValue);
-        const repairData = await postValue(`/logistics/update-repair/${id}/`, 'repair_pc', repairValue);
+        const updated = await postValue(`/logistics/update-repair/${id}/`, 'repair_pc', repairValue);
 
-        totalInput.value = repairData.total_pc;
-        repairInput.value = repairData.repair_pc;
-        row.querySelector('[data-field="working"]').innerText = repairData.working_pc;
+        totalInput.value = updated.total_capacity;
+        repairInput.value = updated.repair_pc;
+        row.querySelector('[data-field="remaining-pc"]').innerText = updated.remaining_pc;
+        row.querySelector('[data-field="students"]').innerText = updated.student_count;
+        const remainingPlaceCell = row.querySelector('[data-field="remaining-place"]');
+        if (remainingPlaceCell) {
+            remainingPlaceCell.innerText = updated.remaining_place;
+        }
+        note.innerText = 'Saved';
     } catch (error) {
+        note.innerText = error.message || 'Unable to save right now.';
         alert(error.message || 'Unable to save logistics values right now.');
     } finally {
         button.disabled = false;

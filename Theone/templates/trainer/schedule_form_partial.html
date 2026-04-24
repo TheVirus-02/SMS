@@ -1,0 +1,112 @@
+<style>
+    .form-shell { max-width: 900px; margin: 0 auto; display: grid; gap: 20px; }
+    .hero-card, .form-card { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); }
+    .hero-card { background: linear-gradient(135deg, #17324d, #2f7f8f); color: #fff; }
+    .form-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:16px; }
+    .field-group { display:grid; gap:6px; }
+    label { font-weight:600; color:#17324d; }
+    select, input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    .info-box { margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: #eef6fb; color: #17324d; }
+    .error-box { margin-top: 14px; padding: 12px 14px; background: #fff0f0; color: #b23a3a; border-radius: 12px; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { border:0; background:#17324d; color:#fff; cursor:pointer; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    @media (max-width: 820px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="form-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{{ page_title }}</h2>
+        <p style="margin:0;">
+            {% if page_title == 'Add Schedule' %}
+            Create multiple hourly schedule slots in one go. Center can be assigned later from the update page.
+            {% else %}
+            Update one schedule slot manually, including center allocation.
+            {% endif %}
+        </p>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+        {% if error %}
+            <div class="error-box">
+                {% for item in error %}
+                    <div>{{ item }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer" required>
+                    <option value="">Select trainer</option>
+                    {% for item in trainers %}
+                    <option value="{{ item.id }}" {% if selected_trainer_id == item.id|stringformat:"s" or schedule.trainer_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if page_title == 'Add Schedule' %}
+                <div class="field-group">
+                    <label for="center">Center</label>
+                    <select id="center" name="center">
+                        <option value="">Center pending</option>
+                        {% for item in centers %}
+                        <option value="{{ item.id }}" {% if selected_center_id == item.id|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="start_batch">Start Batch</label>
+                    <select id="start_batch" name="start_batch" required>
+                        <option value="">Select start batch</option>
+                        {% for item in batches %}
+                        <option value="{{ item.id }}" {% if selected_start_batch_id == item.id|stringformat:"s" %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="end_batch">End Batch</label>
+                    <select id="end_batch" name="end_batch" required>
+                        <option value="">Select end batch</option>
+                        {% for item in batches %}
+                        <option value="{{ item.id }}" {% if selected_end_batch_id == item.id|stringformat:"s" %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% else %}
+                <div class="field-group">
+                    <label for="center">Center</label>
+                    <select id="center" name="center">
+                        <option value="">Center pending</option>
+                        {% for item in centers %}
+                        <option value="{{ item.id }}" {% if selected_center_id == item.id|stringformat:"s" or schedule.center_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="batch">Batch Time</label>
+                    <select id="batch" name="batch" required>
+                        <option value="">Select batch</option>
+                        {% for item in batches %}
+                        <option value="{{ item.id }}" {% if selected_batch_id == item.id|stringformat:"s" or schedule.batch_id == item.id %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="info-box">
+            Working rule: one batch = one hour. Allowed schedule window is from 7:00 AM to 9:00 PM. A trainer cannot be assigned to two centers in the same batch hour.
+            {% if page_title == 'Add Schedule' %}
+            Existing slots inside the selected range will be skipped automatically.
+            {% endif %}
+        </div>
+
+        <div class="action-row">
+            <button class="btn" type="submit">{{ submit_label }}</button>
+            <a class="secondary-link" href="{% url 'trainer_schedule_page' %}">Back to Schedule Page</a>
+        </div>
+    </form>
+</div>

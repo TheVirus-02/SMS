@@ -1,29 +1,368 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .page-shell {
+        display: grid;
+        gap: 20px;
+    }
 
-<h2>Batch: {{ batch.time|time:"h A" }}</h2>
+    .hero-card,
+    .filter-card,
+    .center-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
-{% for center in data %}
+    .hero-card {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+    }
 
-    <!-- 🔥 Center Name + Total Students -->
-    <h3>
-        {{ center.center_name }}
-        (Total Students: {{ center.total_students }})
-    </h3>
+    .summary-grid,
+    .trainer-grid {
+        display: grid;
+        gap: 14px;
+    }
 
-    <ul>
-        {% for t in center.trainers %}
-            <li>
-                <a href="{% url 'mark_attendance' t.trainer.id batch.id %}">
-                    {{ t.trainer.name }}
-                </a>
+    .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        margin-top: 18px;
+    }
 
-                👉 Students: {{ t.count }}
-            </li>
-        {% endfor %}
-    </ul>
+    .summary-box {
+        background: rgba(255, 255, 255, 0.14);
+        border-radius: 14px;
+        padding: 14px;
+    }
 
-{% endfor %}
+    .summary-box strong {
+        display: block;
+        font-size: 26px;
+        margin-top: 6px;
+    }
 
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #17324d;
+    }
+
+    input,
+    select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        background: #f9fbfd;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+
+    .btn,
+    .link-btn {
+        display: inline-block;
+        border-radius: 12px;
+        padding: 11px 18px;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .btn {
+        border: 0;
+        background: #17324d;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .link-btn {
+        background: #eef2f7;
+        color: #17324d;
+    }
+
+    .center-card h3 {
+        margin-top: 0;
+    }
+
+    .trainer-card {
+        border: 1px solid #dce6ef;
+        border-radius: 16px;
+        padding: 18px;
+        background: #fbfdff;
+    }
+
+    .trainer-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+    }
+
+    .meta {
+        color: #617384;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #e6ebf1;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    th {
+        background: #f5f8fb;
+    }
+
+    .status-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .status-btn {
+        border: 1px solid #d6e2ec;
+        background: #fff;
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: all 0.2s ease;
+    }
+
+    .status-btn.active-present {
+        background: #e8f7ec;
+        color: #1f7a3d;
+        border-color: #b8dfc3;
+    }
+
+    .status-btn.active-absent {
+        background: #fff0f0;
+        color: #b23a3a;
+        border-color: #f0c1c1;
+    }
+
+    .status-btn.active-leave {
+        background: #fff8dd;
+        color: #9a6a00;
+        border-color: #edd89c;
+    }
+
+    .remarks-input {
+        min-width: 220px;
+    }
+
+    .save-note {
+        font-size: 12px;
+        color: #617384;
+        margin-top: 6px;
+    }
+
+    .save-note.saved {
+        color: #1f7a3d;
+    }
+
+    @media (max-width: 900px) {
+        .status-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin: 0 0 8px;">{{ batch }} Attendance</h2>
+        <p style="margin: 0;">Live attendance by center and trainer for {{ selected_date }}</p>
+
+        <div class="summary-grid">
+            <div class="summary-box">
+                Total Students
+                <strong>{{ total_students }}</strong>
+            </div>
+            <div class="summary-box">
+                Present
+                <strong>{{ present_count }}</strong>
+            </div>
+            <div class="summary-box">
+                Absent
+                <strong>{{ absent_count }}</strong>
+            </div>
+            <div class="summary-box">
+                Leave
+                <strong>{{ leave_count }}</strong>
+            </div>
+            <div class="summary-box">
+                Unmarked
+                <strong>{{ unmarked_count }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <form method="GET" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="date">Attendance Date</label>
+                <input id="date" type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            </div>
+            <div>
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer">
+                    <option value="">All Trainers</option>
+                    {% for trainer in trainers %}
+                    <option value="{{ trainer.id }}" {% if trainer_filter == trainer.id|stringformat:"s" %}selected{% endif %}>{{ trainer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="action-row">
+            <button class="btn" type="submit">Apply</button>
+            <a class="link-btn" href="{% url 'attendance_batch_detail' batch.id %}">Clear</a>
+            <a class="link-btn" href="{% url 'attendance_batches' %}">Back to Attendance</a>
+        </div>
+    </form>
+
+    {% for center in grouped_data %}
+    <div class="center-card">
+        <h3>{{ center.center_name }}</h3>
+        <p class="meta" style="margin-top: 0;">Total Students: {{ center.total_students }} | Present: {{ center.present_count }}</p>
+
+        <div class="trainer-grid">
+            {% for trainer_group in center.trainers %}
+            <div class="trainer-card">
+                <div class="trainer-head">
+                    <div>
+                        <strong>{{ trainer_group.trainer_name }}</strong>
+                        <div class="meta">Students: {{ trainer_group.total_students }} | Present: {{ trainer_group.present_count }}</div>
+                    </div>
+                </div>
+
+                <table>
+                    <tr>
+                        <th>Student</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                    {% for row in trainer_group.students %}
+                    <tr data-student-id="{{ row.student.id }}">
+                        <td>
+                            <a href="{% url 'student_detail' row.student.id %}">{{ row.student.name }}</a><br>
+                            <span class="meta">{{ row.student.student_id }}</span>
+                        </td>
+                        <td>
+                            <div class="status-actions">
+                                <button class="status-btn {% if row.status == 'present' %}active-present{% endif %}" type="button" data-status="present">Present</button>
+                                <button class="status-btn {% if row.status == 'absent' %}active-absent{% endif %}" type="button" data-status="absent">Absent</button>
+                                <button class="status-btn {% if row.status == 'leave' %}active-leave{% endif %}" type="button" data-status="leave">Leave</button>
+                            </div>
+                            <div class="save-note" data-note>Choose a status to auto-save</div>
+                        </td>
+                        <td>
+                            <input class="remarks-input" type="text" value="{{ row.remarks }}" placeholder="Add remarks and move out">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="center-card">
+        <p style="margin: 0;">No students found for this batch and filter.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function getCookie(name) {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith(name + '='));
+            return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
+        }
+
+        function applyActiveState(row, status) {
+            row.querySelectorAll('.status-btn').forEach(function (button) {
+                button.classList.remove('active-present', 'active-absent', 'active-leave');
+                if (button.dataset.status === status) {
+                    button.classList.add('active-' + status);
+                }
+            });
+        }
+
+        function saveAttendance(row, status) {
+            const studentId = row.dataset.studentId;
+            const note = row.querySelector('[data-note]');
+            const remarks = row.querySelector('.remarks-input').value;
+            const selectedDate = document.getElementById('date').value;
+
+            note.textContent = 'Saving...';
+            fetch("{% url 'save_attendance_record' 0 %}".replace('/0/', '/' + studentId + '/'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: new URLSearchParams({
+                    status: status,
+                    remarks: remarks,
+                    date: selectedDate
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'Unable to save attendance.');
+                    }
+                    applyActiveState(row, status);
+                    note.textContent = 'Saved';
+                    note.classList.add('saved');
+                    window.setTimeout(function () {
+                        note.textContent = 'Saved';
+                    }, 1200);
+                })
+                .catch(error => {
+                    note.textContent = error.message;
+                    note.classList.remove('saved');
+                });
+        }
+
+        document.querySelectorAll('tr[data-student-id]').forEach(function (row) {
+            row.querySelectorAll('.status-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    saveAttendance(row, button.dataset.status);
+                });
+            });
+
+            row.querySelector('.remarks-input').addEventListener('change', function () {
+                const activeButton = row.querySelector('.status-btn.active-present, .status-btn.active-absent, .status-btn.active-leave');
+                if (activeButton) {
+                    saveAttendance(row, activeButton.dataset.status);
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

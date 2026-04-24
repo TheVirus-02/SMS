@@ -1,40 +1,91 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .page-shell { display: grid; gap: 20px; }
+    .hero-card, .filter-card, .table-card { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); }
+    .hero-card { background: linear-gradient(135deg, #17324d, #2f7f8f); color: #fff; }
+    .action-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .btn, .secondary-link { display: inline-block; padding: 11px 18px; border-radius: 12px; text-decoration: none; font-weight: 700; }
+    .btn { background: #17324d; color: #fff; border: 0; cursor: pointer; }
+    .secondary-link { background: #eef2f7; color: #17324d; }
+    .search-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: end; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: #17324d; }
+    input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #cfd8e3; border-radius: 10px; background: #f9fbfd; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #e6ebf1; text-align: left; vertical-align: top; }
+    th { background: #f5f8fb; }
+    .meta { color: #617384; }
+    .course-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .course-tag { background: #eef6fb; color: #0f4c81; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 600; }
+    @media (max-width: 800px) { .search-grid { grid-template-columns: 1fr; } }
+</style>
 
-<h2>Trainer Panel</h2>
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin: 0 0 8px;">Trainer Management</h2>
+        <p style="margin: 0;">Manage trainer details, assigned courses, class schedules, and trainer records from one place.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'add_trainer' %}">Add Trainer</a>
+            <a class="secondary-link" href="{% url 'trainer_schedule_page' %}">Open Schedule Page</a>
+        </div>
+    </div>
 
-<!-- 🔥 Sub Navbar -->
-<div style="margin-bottom:20px;">
-    <a href="{% url 'add_trainer' %}">➕ Add Trainer</a> |
+    <form method="GET" class="filter-card">
+        <div class="search-grid">
+            <div>
+                <label for="q">Search Trainer</label>
+                <input id="q" type="text" name="q" value="{{ query }}" placeholder="Name, mobile, or course">
+            </div>
+            <button class="btn" type="submit">Search</button>
+            {% if query %}
+            <a class="secondary-link" href="{% url 'trainer_list' %}">Clear</a>
+            {% endif %}
+        </div>
+    </form>
 
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">All Trainers</h3>
+            <div class="meta">Total Trainers: {{ total_trainers }}</div>
+        </div>
+        <table>
+            <tr>
+                <th>Trainer</th>
+                <th>Courses</th>
+                <th>Students</th>
+                <th>Schedules</th>
+                <th>Action</th>
+            </tr>
+            {% for trainer in trainers %}
+            <tr>
+                <td>
+                    <a href="{% url 'trainer_detail' trainer.id %}"><strong>{{ trainer.name }}</strong></a><br>
+                    <span class="meta">{{ trainer.mobile }}</span>
+                </td>
+                <td>
+                    <div class="course-tags">
+                        {% for course in trainer.courses.all %}
+                        <span class="course-tag">{{ course.name }}</span>
+                        {% empty %}
+                        <span class="meta">No courses</span>
+                        {% endfor %}
+                    </div>
+                </td>
+                <td>{{ trainer.student_count }}</td>
+                <td>{{ trainer.schedule_count }}</td>
+                <td>
+                    <a href="{% url 'trainer_detail' trainer.id %}">Open</a> |
+                    <a href="{% url 'update_trainer' trainer.id %}">Edit</a> |
+                    <a href="{% url 'delete_trainer' trainer.id %}" onclick="return confirm('Delete this trainer?')">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No trainer matched the current search.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 </div>
-
-<table border="1" cellpadding="10">
-    <tr>
-        <th>Name</th>
-        <th>Mobile</th>
-        <th>Action</th>
-    </tr>
-
-    {% for t in trainers %}
-    <tr>
-        <td>
-            <a href="{% url 'trainer_detail' t.id %}">
-                {{ t.name }}
-            </a>
-        </td>
-        <td>{{ t.mobile }}</td>
-
-        <!-- 🔥 Delete Button -->
-        <td>
-            <a href="{% url 'delete_trainer' t.id %}"
-               onclick="return confirm('Delete this trainer?')">
-               ❌ Delete
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
 {% endblock %}

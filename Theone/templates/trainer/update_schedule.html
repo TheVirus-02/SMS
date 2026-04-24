@@ -1,47 +1,5 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<h2>Update Schedule</h2>
-
-{% if error %}
-    <p style="color:red;">{{ error }}</p>
-{% endif %}
-
-<form method="POST">
-    {% csrf_token %}
-
-    <label>Center:</label>
-    <select name="center">
-        {% for c in centers %}
-            <option value="{{ c.id }}" {% if c.id == schedule.center.id %}selected{% endif %}>
-                {{ c.name }}
-            </option>
-        {% endfor %}
-    </select>
-    <br><br>
-
-    <label>Batch:</label>
-    <select name="batch">
-        {% for b in batches %}
-            <option value="{{ b.id }}" {% if b.id == schedule.batch.id %}selected{% endif %}>
-                {{ b.time|time:"h A" }}
-            </option>
-        {% endfor %}
-    </select>
-    <br><br>
-
-    <label>Start Time:</label>
-    <input type="time" name="start_time" value="{{ schedule.start_time|time:'H:i' }}"><br><br>
-
-    <label>End Time:</label>
-    <input type="time" name="end_time" value="{{ schedule.end_time|time:'H:i' }}"><br><br>
-
-    <button type="submit">Update</button>
-</form>
-
-<br>
-
-<a href="{% url 'trainer_detail' schedule.trainer.id %}">⬅️ Back</a>
-
+{% include 'trainer/schedule_form_partial.html' with page_title='Update Schedule' submit_label='Update Schedule' back_to_schedule=True %}
 {% endblock %}

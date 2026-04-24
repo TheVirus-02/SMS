@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; border:0; cursor:pointer; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(180px, 220px) minmax(180px, 220px) auto auto; gap:12px; align-items:end; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:#17324d; }
+    input, select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .meta { color:#617384; }
+    .status-pill { display:inline-block; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; background:#eef6fb; color:#0f4c81; }
+    @media (max-width:1000px) { .filter-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Enquiry System</h2>
+        <p style="margin:0;">Track every class enquiry from first contact to admission, with follow-up status and conversion into a student record.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'add_enquiry' %}">Add Enquiry</a>
+            <a class="secondary-link" href="{% url 'today_follow_up' %}">Today Follow-up</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">Enquiries<strong>{{ total_enquiries }}</strong></div>
+            <div class="stat-box">New<strong>{{ new_count }}</strong></div>
+            <div class="stat-box">Need Follow-up<strong>{{ follow_up_count }}</strong></div>
+            <div class="stat-box">Today Follow-up<strong>{{ today_follow_up_count }}</strong></div>
+            <div class="stat-box">Admitted<strong>{{ admitted_count }}</strong></div>
+        </div>
+    </div>
+
+    <form method="GET" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="q">Search</label>
+                <input id="q" type="text" name="q" value="{{ query }}" placeholder="Name, mobile, course, source">
+            </div>
+            <div>
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="counsellor">Counsellor</label>
+                <select id="counsellor" name="counsellor">
+                    <option value="">All Counsellors</option>
+                    {% for counsellor in counsellors %}
+                    <option value="{{ counsellor.id }}" {% if counsellor_filter == counsellor.id|stringformat:"s" %}selected{% endif %}>{{ counsellor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Apply</button>
+            {% if query or status_filter or counsellor_filter %}
+            <a class="secondary-link" href="{% url 'enquiry_list' %}">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="table-card">
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Course / Center</th>
+                <th>Counsellor</th>
+                <th>Follow-up</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            {% for enquiry in enquiries %}
+            <tr>
+                <td>
+                    <a href="{% url 'enquiry_detail' enquiry.id %}"><strong>{{ enquiry.name }}</strong></a><br>
+                    <span class="meta">{{ enquiry.mobile_no }}</span><br>
+                    <span class="meta">Enquiry Date: {{ enquiry.enquiry_date }}</span>
+                </td>
+                <td>
+                    <div>{{ enquiry.interested_course.name|default:"-" }}</div>
+                    <div class="meta">{{ enquiry.preferred_center.name|default:"-" }} | {{ enquiry.preferred_batch|default:"-" }}</div>
+                </td>
+                <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
+                <td>
+                    <div><strong>Next:</strong> {{ enquiry.next_follow_up_date|default:"-" }}</div>
+                    <div class="meta"><strong>Last:</strong> {{ enquiry.last_follow_up_date|default:"-" }}</div>
+                </td>
+                <td>
+                    <span class="status-pill">{{ enquiry.get_status_display }}</span>
+                    <div class="meta" style="margin-top:8px;">{{ enquiry.get_admission_probability_display }}</div>
+                    {% if enquiry.is_converted %}
+                    <div class="meta">Student ID: {{ enquiry.converted_student.student_id }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> |
+                    <a href="{% url 'update_enquiry' enquiry.id %}">Edit</a>
+                    {% if enquiry.is_converted %}
+                    | <a href="{% url 'student_detail' enquiry.converted_student.id %}">Student</a>
+                    {% else %}
+                    | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">No enquiry found for the current filter.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

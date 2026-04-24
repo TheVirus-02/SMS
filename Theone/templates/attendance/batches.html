@@ -1,26 +1,226 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+    .page-shell {
+        display: grid;
+        gap: 20px;
+    }
 
-<h2>Select Batch</h2>
+    .hero-card,
+    .filter-card,
+    .batch-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
 
-<div style="display:flex;flex-direction: column; flex-wrap:wrap; gap:10px;justify-content: center;">
+    .hero-card {
+        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        color: #fff;
+    }
 
-{% for item in batch_data %}
+    .batch-grid {
+        display: grid;
+        gap: 16px;
+    }
 
-<a href="{% url 'attendance_batch_detail' item.batch.id %}">
+    .batch-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
 
-    {{ item.batch.time|time:"h A" }} /
+    .batch-link {
+        color: #17324d;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 22px;
+    }
 
-    {% for c in item.centers %}
-        {{ c.center }} - {{ c.available }}
-        {% if not forloop.last %} | {% endif %}
-    {% endfor %}
+    .summary-strip,
+    .center-grid {
+        display: grid;
+        gap: 14px;
+    }
 
-</a>
+    .summary-strip {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        margin-bottom: 18px;
+    }
 
-{% endfor %}
+    .summary-box,
+    .center-box {
+        background: #f7fbfe;
+        border: 1px solid #dce8f2;
+        border-radius: 14px;
+        padding: 14px;
+    }
 
+    .summary-box strong,
+    .center-box strong {
+        display: block;
+        font-size: 24px;
+        color: #17324d;
+        margin-top: 6px;
+    }
+
+    .center-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .meta {
+        color: #617384;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #17324d;
+    }
+
+    input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        border: 1px solid #cfd8e3;
+        border-radius: 10px;
+        background: #f9fbfd;
+    }
+
+    .btn,
+    .clear-link {
+        display: inline-block;
+        border-radius: 12px;
+        padding: 11px 18px;
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .btn {
+        border: 0;
+        background: #17324d;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .clear-link {
+        background: #eef2f7;
+        color: #17324d;
+    }
+
+    .trainer-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .trainer-tag {
+        background: #eef6fb;
+        color: #0f4c81;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin: 0 0 8px;">Attendance System</h2>
+        <p style="margin: 0;">View batch timing, center capacity, and remaining places. Click a batch to open live attendance.</p>
+    </div>
+
+    <form method="GET" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="q">Search Batch Or Trainer</label>
+                <input id="q" type="text" name="q" value="{{ search_query }}" placeholder="Example: 1 PM or trainer name">
+            </div>
+            <button class="btn" type="submit">Search</button>
+            {% if search_query %}
+            <a class="clear-link" href="{% url 'attendance_batches' %}">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="batch-grid">
+        {% for item in batch_data %}
+        <div class="batch-card">
+            <div class="batch-head">
+                <div>
+                    <a class="batch-link" href="{% url 'attendance_batch_detail' item.batch.id %}">{{ item.batch }}</a>
+                    <div class="meta" style="margin-top: 6px;">Attendance date: {{ today }}</div>
+                    {% if item.trainer_names %}
+                    <div class="trainer-tags">
+                        {% for trainer_name in item.trainer_names %}
+                        <span class="trainer-tag">{{ trainer_name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <a href="{% url 'attendance_batch_detail' item.batch.id %}" style="text-decoration: none;">Open Attendance</a>
+            </div>
+
+            <div class="summary-strip">
+                <div class="summary-box">
+                    Total Students
+                    <strong>{{ item.total_students }}</strong>
+                </div>
+                <div class="summary-box">
+                    Total Capacity
+                    <strong>{{ item.total_capacity }}</strong>
+                </div>
+                <div class="summary-box">
+                    Remaining Place
+                    <strong>{{ item.total_available }}</strong>
+                </div>
+            </div>
+
+            <div class="center-grid">
+                {% for center in item.centers %}
+                <div class="center-box">
+                    <div>{{ center.name }}</div>
+                    <strong>{{ center.available }}</strong>
+                    <div class="meta">Remaining place</div>
+                    <div class="meta" style="margin-top: 8px;">Students: {{ center.students }} | Capacity: {{ center.capacity }}</div>
+                    {% if center.trainer_names %}
+                    <div class="trainer-tags">
+                        {% for trainer_name in center.trainer_names %}
+                        <span class="trainer-tag">{{ trainer_name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="meta" style="margin-top: 8px;">No trainer assigned</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="batch-card">
+            <p style="margin: 0;">No batch matched the current search.</p>
+        </div>
+        {% endfor %}
+    </div>
 </div>
-
 {% endblock %}

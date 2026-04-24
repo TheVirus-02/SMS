@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    .trainer-tags { display:flex; flex-wrap:wrap; gap:8px; }
+    .trainer-tag { background:#eef6fb; color:#0f4c81; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .meta { color:#617384; }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{{ course.name }}</h2>
+        <p style="margin:0;">Course profile with assigned trainers and enrolled students.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'update_course' course.id %}">Edit Course</a>
+            <a class="danger-link" href="{% url 'delete_course' course.id %}" onclick="return confirm('Delete this course?')">Delete Course</a>
+            <a class="secondary-link" href="{% url 'course_list' %}">Back to Courses</a>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h3 style="margin-top:0;">Course Description</h3>
+        <div class="meta" style="line-height:1.7;">{{ course.description|default:"No course description added yet." }}</div>
+    </div>
+
+    <div class="info-card">
+        <h3 style="margin-top:0;">Assigned Trainers</h3>
+        <div class="trainer-tags">
+            {% for trainer in trainers %}
+            <a class="trainer-tag" href="{% url 'trainer_detail' trainer.id %}" style="text-decoration:none;">{{ trainer.name }}</a>
+            {% empty %}
+            <span class="meta">No trainer assigned.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">Students In This Course</h3>
+            <div class="meta">Total Students: {{ student_count }}</div>
+        </div>
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Completion</th>
+            </tr>
+            {% for student_course in student_courses %}
+            <tr>
+                <td><a href="{% url 'student_detail' student_course.student.id %}">{{ student_course.student.name }}</a></td>
+                <td>{{ student_course.student.get_status_display }}</td>
+                <td>
+                    {% if student_course.is_completed %}
+                    Completed<br><span class="meta">{{ student_course.completion_date|default:"-" }}</span>
+                    {% else %}
+                    <span class="meta">In Progress</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No student is assigned to this course yet.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -8,6 +8,9 @@
             font-family: Arial;
             margin: 0;
             background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* NAVBAR */
@@ -30,6 +33,52 @@
         /* CONTENT */
         .container {
             padding: 20px;
+            flex: 1;
+        }
+
+        .footer {
+            background: #17324d;
+            color: #eef4fa;
+            padding: 22px 20px;
+            margin-top: 30px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr;
+            gap: 18px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer h4 {
+            margin: 0 0 10px;
+            color: #ffffff;
+        }
+
+        .footer p {
+            margin: 0 0 8px;
+            line-height: 1.6;
+        }
+
+        .footer a {
+            color: #8fd3ff;
+            text-decoration: none;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 16px auto 0;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            font-size: 14px;
+            color: #cfdceb;
+        }
+
+        @media (max-width: 900px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -53,10 +102,18 @@
 
     <a href="{% url 'add_installment' student.id %}">Installment</a>
 
-    {% endif %}
+        {% endif %}
     <a href="{% url 'trainer_list' %}">Trainers</a>
+    <a href="{% url 'counsellor_list' %}">Counsellors</a>
+    <a href="{% url 'enquiry_list' %}">Enquiries</a>
+    <a href="{% url 'course_list' %}">Courses</a>
+    <a href="{% url 'batch_list' %}">Batch System</a>
 
     <a href="{% url 'logistics_dashboard' %}">Logistics</a>
+    <a href="{% url 'exam_dashboard' %}">Exam System</a>
+    <a href="{% url 'certificate_dashboard' %}">Certificate System</a>
+
+
     </div>
 
     <!-- 🔥 MAIN CONTENT -->
@@ -64,6 +121,36 @@
         {% block content %}
         {% endblock %}
     </div>
+
+    <footer class="footer">
+        <div class="footer-grid">
+            <div>
+                <h4>Student Management System</h4>
+                <p>Matrix Computer Education</p>
+                <p>Website: <a href="https://matrixcomputereducation.com" target="_blank" rel="noopener noreferrer">matrixcomputereducation.com</a></p>
+                <p>For internal use only. Student data is confidential.</p>
+            </div>
+
+            <div>
+                <h4>Support</h4>
+                <p>Phone: +91 9987949800</p>
+                <p>Address: 2nd Floor, Sangita Niwas, Hari Shankar Joshi Road, Near Mumbai Public School, Dahisar(E)</p>
+            </div>
+
+            <div>
+                <h4>Developed By</h4>
+                <p>Aasha Developer</p>
+                <p>Contact: 9351626610</p>
+                <p>Website: <a href="https://thevirus-02.github.io/portfolio-website/" target="_blank" rel="noopener noreferrer">Developer Website</a></p>
+                <p>Version 1.0</p>
+
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            © 2026 Matrix Computer Education. All rights reserved.
+        </div>
+    </footer>
 {% block scripts %}
 {% endblock %}
 </body>

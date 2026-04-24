@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background: linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; border:0; cursor:pointer; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:12px; align-items:end; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:#17324d; }
+    select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .meta { color:#617384; }
+    .message-card { background:#eef6fb; border-left:4px solid #17324d; }
+    .toggle-btn { background:#eef5fb; color:#17324d; border:1px solid #cfe1ef; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; transition:background 0.2s ease, color 0.2s ease, transform 0.2s ease; }
+    .toggle-btn:hover { background:#dfeef8; transform:translateY(-1px); }
+    .toggle-btn.is-open { background:#17324d; color:#fff; border-color:#17324d; }
+    .pill-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .pill { background:#eef6fb; color:#0f4c81; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
+    .slot-card { border:1px solid #dce6ef; border-radius:14px; padding:14px; background:#fbfdff; }
+    .slot-card + .slot-card { margin-top:12px; }
+    .collapsible { overflow:hidden; max-height:0; opacity:0; transition:max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease; margin-top:0; }
+    .collapsible.is-open { opacity:1; margin-top:18px; }
+    @media (max-width:800px) { .filter-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card message-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Trainer Schedule Page</h2>
+        <p style="margin:0;">Set hourly trainer schedules with center allocation and track all trainer class entries in one place.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'schedule_add_global' %}">Add Schedule</a>
+            <a class="secondary-link" href="{% url 'trainer_list' %}">Back to Trainers</a>
+        </div>
+    </div>
+
+    <form method="GET" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="trainer">Filter By Trainer</label>
+                <select id="trainer" name="trainer">
+                    <option value="">All Trainers</option>
+                    {% for trainer in trainers %}
+                    <option value="{{ trainer.id }}" {% if selected_trainer_id == trainer.id|stringformat:"s" %}selected{% endif %}>{{ trainer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Apply</button>
+            {% if selected_trainer_id %}
+            <a class="secondary-link" href="{% url 'trainer_schedule_page' %}">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div>
+                <h3 style="margin:0;">Empty Batch-Center Slots</h3>
+                <div class="meta" style="margin-top:6px;">{{ uncovered_slots|length }} batch times have missing center allocation</div>
+            </div>
+            <button class="toggle-btn" type="button" data-target="empty-slots-panel">Open Empty Batch-Center Slots</button>
+        </div>
+
+        <div id="empty-slots-panel" class="collapsible">
+            <p class="meta" style="margin-top:0;">These are the batch hours where at least one center still has no trainer assigned.</p>
+            {% for slot in uncovered_slots %}
+            <div class="slot-card">
+                <strong>{{ slot.batch }}</strong>
+                <div class="meta" style="margin-top:6px;">Missing Centers: {{ slot.missing_count }}</div>
+                <div class="pill-list">
+                    {% for center in slot.missing_centers %}
+                    <span class="pill">{{ center.name }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <p style="margin:0;">All batch-center slots are covered.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h3 style="margin-top:0;">All Schedules</h3>
+        <table>
+            <tr>
+                <th>Trainer</th>
+                <th>Center</th>
+                <th>Batch</th>
+                <th>Time</th>
+                <th>Action</th>
+            </tr>
+            {% for schedule in schedules %}
+            <tr>
+                <td><a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a></td>
+                <td>{{ schedule.center.name|default:"Center Pending" }}</td>
+                <td>{{ schedule.batch }}</td>
+                <td>{{ schedule.start_time|time:"h:i A" }} - {{ schedule.end_time|time:"h:i A" }}</td>
+                <td>
+                    <a href="{% url 'update_schedule' schedule.id %}">Edit</a> |
+                    <a href="{% url 'delete_schedule' schedule.id %}" onclick="return confirm('Delete this schedule?')">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No schedule found.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function setPanelState(button, panel, open) {
+            button.classList.toggle('is-open', open);
+            button.textContent = open
+                ? button.textContent.replace('Open', 'Hide')
+                : button.textContent.replace('Hide', 'Open');
+            panel.classList.toggle('is-open', open);
+            panel.style.maxHeight = open ? panel.scrollHeight + 'px' : '0px';
+        }
+
+        document.querySelectorAll('.toggle-btn').forEach(function (button) {
+            var panel = document.getElementById(button.dataset.target);
+            if (!panel) {
+                return;
+            }
+
+            panel.style.maxHeight = '0px';
+            button.addEventListener('click', function () {
+                var open = !button.classList.contains('is-open');
+                setPanelState(button, panel, open);
+            });
+        });
+
+        window.addEventListener('resize', function () {
+            document.querySelectorAll('.toggle-btn.is-open').forEach(function (button) {
+                var panel = document.getElementById(button.dataset.target);
+                if (panel) {
+                    panel.style.maxHeight = panel.scrollHeight + 'px';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

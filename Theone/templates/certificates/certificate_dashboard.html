@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .card { background:#fff; border-radius:16px; padding:22px; box-shadow:0 10px 28px rgba(18, 39, 63, 0.08); margin-bottom:20px; }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .toolbar { display:flex; gap:12px; align-items:end; flex-wrap:wrap; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:16px; }
+    .stat-value { font-size:28px; font-weight:700; margin-top:8px; }
+    label { display:block; font-weight:600; margin-bottom:6px; }
+    input, select { padding:10px 12px; border:1px solid #d8e0ea; border-radius:10px; min-width:220px; }
+    .btn, .toggle-btn { background:#17324d; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; }
+    .toggle-btn.is-off { background:#eef5fb; color:#17324d; border:1px solid #cfe1ef; }
+    .toggle-btn.is-disabled { background:#eceff3; color:#7a8898; cursor:not-allowed; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .muted { color:#617384; }
+    .pill { display:inline-block; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+    .pill.not-given { background:#fff0f0; color:#b23a3a; }
+    .pill.pending { background:#fff6e7; color:#9a6700; }
+    .pill.created { background:#eef6fb; color:#1c5788; }
+    .pill.given { background:#ebf8ef; color:#24764b; }
+    .toggle-stack { display:grid; gap:8px; }
+    .toggle-form { margin:0; }
+</style>
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="card">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="card hero-card">
+    <h2 style="margin:0 0 8px;">Certificate System</h2>
+    <p style="margin:0;">Track whether student certificates are ready and whether they have already been given.</p>
+    <div class="stats">
+        <div class="stat-box">
+            <div>Total Records</div>
+            <div class="stat-value">{{ total_records }}</div>
+        </div>
+        <div class="stat-box">
+            <div>Pending</div>
+            <div class="stat-value">{{ pending_count }}</div>
+        </div>
+        <div class="stat-box">
+            <div>Created</div>
+            <div class="stat-value">{{ created_count }}</div>
+        </div>
+        <div class="stat-box">
+            <div>Given</div>
+            <div class="stat-value">{{ given_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <form method="GET" class="toolbar">
+        <div>
+            <label for="q">Search</label>
+            <input id="q" type="text" name="q" value="{{ search_query }}" placeholder="Student or course">
+        </div>
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">All Status</option>
+                <option value="not_given" {% if status_filter == 'not_given' %}selected{% endif %}>Exam is not given yet</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="created" {% if status_filter == 'created' %}selected{% endif %}>Created</option>
+                <option value="given" {% if status_filter == 'given' %}selected{% endif %}>Given</option>
+            </select>
+        </div>
+        <button class="btn" type="submit">Show Records</button>
+        {% if search_query or status_filter %}
+        <a href="{% url 'certificate_dashboard' %}" class="muted" style="text-decoration:none;padding-bottom:12px;">Clear filter</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="margin-top:0;">Certificate Records</h3>
+    <table>
+        <tr>
+            <th>Student</th>
+            <th>Course</th>
+            <th>Calculated Marks</th>
+            <th>Practical Marks</th>
+            <th>Total Marks</th>
+            <th>Status</th>
+            <th>Certificate Created</th>
+            <th>Certificate Given</th>
+        </tr>
+        {% for reg in registrations %}
+        <tr>
+            <td>
+                <a href="{% url 'student_detail' reg.student.id %}">{{ reg.student_name }}</a><br>
+                <span class="muted">{{ reg.exam_date }}</span>
+            </td>
+            <td>{{ reg.course_name }}</td>
+            <td>{{ reg.calculated_marks|default:"-" }}</td>
+            <td>{{ reg.practical_marks|default:"-" }}</td>
+            <td>{{ reg.total_marks|default:"-" }}</td>
+            <td>
+                <span class="pill {% if not reg.has_uploaded_marks %}not-given{% elif reg.is_certificate_given %}given{% elif reg.is_certificate_created %}created{% else %}pending{% endif %}">
+                    {{ reg.certificate_status_label }}
+                </span>
+            </td>
+            <td>
+                <div class="toggle-stack">
+                    <form class="toggle-form" method="POST" action="{% url 'toggle_certificate_status' reg.id %}?q={{ search_query }}&status={{ status_filter }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="created">
+                        <button class="toggle-btn {% if not reg.is_certificate_created %}is-off{% endif %}{% if not reg.has_uploaded_marks and not reg.is_certificate_created %} is-disabled{% endif %}" type="submit" {% if not reg.has_uploaded_marks and not reg.is_certificate_created %}disabled{% endif %}>
+                            {% if reg.is_certificate_created %}Yes{% else %}No{% endif %}
+                        </button>
+                    </form>
+                    <div class="muted">{{ reg.certificate_created_date|default:"-" }}</div>
+                </div>
+            </td>
+            <td>
+                <div class="toggle-stack">
+                    <form class="toggle-form" method="POST" action="{% url 'toggle_certificate_status' reg.id %}?q={{ search_query }}&status={{ status_filter }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="given">
+                        <button class="toggle-btn {% if not reg.is_certificate_given %}is-off{% endif %}{% if not reg.has_uploaded_marks and not reg.is_certificate_given %} is-disabled{% endif %}" type="submit" {% if not reg.has_uploaded_marks and not reg.is_certificate_given %}disabled{% endif %}>
+                            {% if reg.is_certificate_given %}Yes{% else %}No{% endif %}
+                        </button>
+                    </form>
+                    <div class="muted">{{ reg.certificate_given_date|default:"-" }}</div>
+                </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8">No certificate records found for this view.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

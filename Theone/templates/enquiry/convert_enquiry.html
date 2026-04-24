@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .form-shell { max-width:1000px; margin:0 auto; display:grid; gap:20px; }
+    .hero-card, .form-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
+    .field-group { display:grid; gap:6px; }
+    .field-group.full { grid-column:1 / -1; }
+    label { font-weight:600; color:#17324d; }
+    input, select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    .error-box, .info-box { padding:14px 16px; border-radius:14px; }
+    .error-box { background:#fff0f0; color:#b23a3a; }
+    .info-box { background:#eef6fb; color:#17324d; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    @media (max-width:820px) { .form-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Convert Enquiry To Admission</h2>
+        <p style="margin:0;">This will create the actual student registration automatically for {{ enquiry.name }}.</p>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+        {% if error %}
+        <div class="error-box">
+            {% for item in error %}
+            <div>{{ item }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="info-box" style="margin-bottom:18px;">
+            Student details will be copied from the enquiry record. You only need to confirm the final admission details below.
+        </div>
+
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="course">Final Course</label>
+                <select id="course" name="course" required>
+                    <option value="">Select course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if form_data.course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer" required>
+                    <option value="">Select trainer</option>
+                    {% for trainer in trainers %}
+                    <option value="{{ trainer.id }}" {% if form_data.trainer == trainer.id|stringformat:"s" %}selected{% endif %}>{{ trainer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="batch">Batch</label>
+                <select id="batch" name="batch" required>
+                    <option value="">Select batch</option>
+                    {% for batch in batches %}
+                    <option value="{{ batch.id }}" {% if form_data.batch == batch.id|stringformat:"s" %}selected{% endif %}>{{ batch }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="center">Center</label>
+                <select id="center" name="center" required>
+                    <option value="">Select center</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}" {% if form_data.center == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="counsellor">Counsellor</label>
+                <select id="counsellor" name="counsellor">
+                    <option value="">Select counsellor</option>
+                    {% for counsellor in counsellors %}
+                    <option value="{{ counsellor.id }}" {% if form_data.counsellor == counsellor.id|stringformat:"s" %}selected{% endif %}>{{ counsellor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="joining_date">Joining Date</label>
+                <input id="joining_date" name="joining_date" type="date" value="{{ form_data.joining_date }}" required>
+            </div>
+            <div class="field-group">
+                <label for="course_fee">Course Fee</label>
+                <input id="course_fee" name="course_fee" type="number" min="0" value="{{ form_data.course_fee }}">
+            </div>
+            <div class="field-group">
+                <label for="paid_fee">Paid Fee</label>
+                <input id="paid_fee" name="paid_fee" type="number" min="0" value="{{ form_data.paid_fee }}">
+            </div>
+            <div class="field-group">
+                <label for="reference_source">Reference Source</label>
+                <input id="reference_source" name="reference_source" type="text" value="{{ form_data.reference_source }}">
+            </div>
+            <div class="field-group">
+                <label for="status">Student Status</label>
+                <select id="status" name="status">
+                    <option value="active" {% if form_data.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if form_data.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="leave" {% if form_data.status == 'leave' %}selected{% endif %}>Leave</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <button class="btn" type="submit">Convert And Create Student</button>
+            <a class="secondary-link" href="{% url 'enquiry_detail' enquiry.id %}">Back to Enquiry</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

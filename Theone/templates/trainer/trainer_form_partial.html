@@ -1,0 +1,71 @@
+<style>
+    .form-shell { max-width: 1000px; margin: 0 auto; display: grid; gap: 20px; }
+    .hero-card, .form-card { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); }
+    .hero-card { background: linear-gradient(135deg, #17324d, #2f7f8f); color: #fff; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .field-group { display: grid; gap: 6px; }
+    .field-group.full { grid-column: 1 / -1; }
+    label { font-weight: 600; color: #17324d; }
+    input, select { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1px solid #cfd8e3; border-radius: 10px; background: #f9fbfd; }
+    .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+    .course-option { display:flex; gap:8px; align-items:center; padding: 10px 12px; border: 1px solid #dbe4ed; border-radius: 12px; background: #f9fbfd; }
+    .course-option input { width: auto; margin: 0; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top: 20px; }
+    .btn, .secondary-link { display:inline-block; padding: 11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { border:0; background:#17324d; color:#fff; cursor:pointer; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    @media (max-width: 820px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+
+<div class="form-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{{ page_title }}</h2>
+        <p style="margin:0;">Manage trainer profile, joining details, and course assignment.</p>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="name">Trainer Name</label>
+                <input id="name" type="text" name="name" value="{{ trainer.name|default:'' }}" required>
+            </div>
+            <div class="field-group">
+                <label for="mobile">Mobile Number</label>
+                <input id="mobile" type="text" name="mobile" value="{{ trainer.mobile|default:'' }}" required>
+            </div>
+            <div class="field-group">
+                <label for="age">Age</label>
+                <input id="age" type="number" name="age" value="{{ trainer.age|default:'' }}">
+            </div>
+            <div class="field-group">
+                <label for="dob">Date of Birth</label>
+                <input id="dob" type="date" name="dob" value="{{ trainer.dob|date:'Y-m-d' }}">
+            </div>
+            <div class="field-group">
+                <label for="joining_date">Joining Date</label>
+                <input id="joining_date" type="date" name="joining_date" value="{{ trainer.joining_date|date:'Y-m-d' }}">
+            </div>
+            <div class="field-group full">
+                <label>Courses</label>
+                <div class="course-grid">
+                    {% for course in courses %}
+                    <label class="course-option">
+                        <input type="checkbox" name="courses" value="{{ course.id }}" {% if trainer and course in trainer.courses.all %}checked{% endif %}>
+                        <span>{{ course.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <button class="btn" type="submit">{{ submit_label }}</button>
+            {% if back_id %}
+            <a class="secondary-link" href="{% url back_url_name back_id %}">Back</a>
+            {% else %}
+            <a class="secondary-link" href="{% url back_url_name %}">Back</a>
+            {% endif %}
+        </div>
+    </form>
+</div>

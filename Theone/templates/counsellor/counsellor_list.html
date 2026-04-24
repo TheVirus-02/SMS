@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255, 255, 255, 0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; border:0; cursor:pointer; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(180px, 220px) auto auto; gap:12px; align-items:end; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:#17324d; }
+    input, select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
+    th { background:#f5f8fb; }
+    .meta { color:#617384; }
+    @media (max-width:900px) { .filter-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Counsellor Management</h2>
+        <p style="margin:0;">Manage counsellor profiles, center assignment, and student follow-up records from one place.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'add_counsellor' %}">Add Counsellor</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                Counsellors
+                <strong>{{ total_counsellors }}</strong>
+            </div>
+            <div class="stat-box">
+                Admissions Handled
+                <strong>{{ total_students }}</strong>
+            </div>
+            <div class="stat-box">
+                Active Students
+                <strong>{{ total_active_students }}</strong>
+            </div>
+            <div class="stat-box">
+                Joined This Month
+                <strong>{{ total_joined_this_month }}</strong>
+            </div>
+            <div class="stat-box">
+                Enquiries
+                <strong>{{ total_enquiries }}</strong>
+            </div>
+            <div class="stat-box">
+                Today Follow-up
+                <strong>{{ total_today_follow_ups }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <form method="GET" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="q">Search Counsellor</label>
+                <input id="q" type="text" name="q" value="{{ query }}" placeholder="Name, mobile, or center">
+            </div>
+            <div>
+                <label for="center">Center</label>
+                <select id="center" name="center">
+                    <option value="">All Centers</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}" {% if selected_center_id == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Search</button>
+            {% if query or selected_center_id %}
+            <a class="secondary-link" href="{% url 'counsellor_list' %}">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">All Counsellors</h3>
+            <div class="meta">Total Counsellors: {{ total_counsellors }}</div>
+        </div>
+        <table>
+            <tr>
+                <th>Counsellor</th>
+                <th>Center</th>
+                <th>Performance</th>
+                <th>Action</th>
+            </tr>
+            {% for counsellor in counsellors %}
+            <tr>
+                <td>
+                    <a href="{% url 'counsellor_detail' counsellor.id %}"><strong>{{ counsellor.name }}</strong></a><br>
+                    <span class="meta">{{ counsellor.mobile|default:"No mobile" }}</span>
+                </td>
+                <td>{{ counsellor.center.name|default:"-" }}</td>
+                <td>
+                    <div><strong>Total:</strong> {{ counsellor.student_count }}</div>
+                    <div class="meta"><strong>Active:</strong> {{ counsellor.active_student_count }}</div>
+                    <div class="meta"><strong>Joined This Month:</strong> {{ counsellor.joined_this_month_count }}</div>
+                    <div class="meta"><strong>Completed:</strong> {{ counsellor.completed_student_count }}</div>
+                    <div class="meta"><strong>Enquiries:</strong> {{ counsellor.enquiry_count }}</div>
+                    <div class="meta"><strong>Open Enquiries:</strong> {{ counsellor.open_enquiry_count }}</div>
+                    <div class="meta"><strong>Today Follow-up:</strong> {{ counsellor.today_follow_up_enquiry_count }}</div>
+                </td>
+                <td>
+                    <a href="{% url 'counsellor_detail' counsellor.id %}">Open</a> |
+                    <a href="{% url 'update_counsellor' counsellor.id %}">Edit</a> |
+                    <a href="{% url 'delete_counsellor' counsellor.id %}" onclick="return confirm('Delete this counsellor?')">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No counsellor matched the current search.</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

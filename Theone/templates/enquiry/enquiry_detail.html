@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; }
+    .info-item { background:#f8fbfd; border:1px solid #dce6ef; border-radius:14px; padding:14px; }
+    .info-item span { display:block; color:#617384; font-size:13px; margin-bottom:6px; }
+    .status-pill { display:inline-block; padding:6px 12px; border-radius:999px; background:#eef6fb; color:#0f4c81; font-weight:700; }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="info-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{{ enquiry.name }}</h2>
+        <p style="margin:0;">Enquiry profile and conversion status.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'update_enquiry' enquiry.id %}">Edit Enquiry</a>
+            {% if enquiry.is_converted %}
+            <a class="btn" href="{% url 'student_detail' enquiry.converted_student.id %}">Open Student Record</a>
+            {% else %}
+            <a class="btn" href="{% url 'convert_enquiry' enquiry.id %}">Convert To Admission</a>
+            {% endif %}
+            <a class="danger-link" href="{% url 'delete_enquiry' enquiry.id %}" onclick="return confirm('Delete this enquiry?')">Delete Enquiry</a>
+            <a class="secondary-link" href="{% url 'enquiry_list' %}">Back to Enquiries</a>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h3 style="margin-top:0;">Enquiry Details</h3>
+        <div class="info-grid">
+            <div class="info-item"><span>Mobile</span><strong>{{ enquiry.mobile_no }}</strong></div>
+            <div class="info-item"><span>Alternative Mobile</span><strong>{{ enquiry.alt_mobile_no|default:"-" }}</strong></div>
+            <div class="info-item"><span>Guardian Name</span><strong>{{ enquiry.guardian_name|default:"-" }}</strong></div>
+            <div class="info-item"><span>Guardian Mobile</span><strong>{{ enquiry.guardian_mobile|default:"-" }}</strong></div>
+            <div class="info-item"><span>Qualification</span><strong>{{ enquiry.qualification|default:"-" }}</strong></div>
+            <div class="info-item"><span>Age</span><strong>{{ enquiry.age|default:"-" }}</strong></div>
+            <div class="info-item"><span>Enquiry Date</span><strong>{{ enquiry.enquiry_date }}</strong></div>
+            <div class="info-item"><span>Expected Joining Date</span><strong>{{ enquiry.expected_joining_date|default:"-" }}</strong></div>
+            <div class="info-item"><span>Interested Course</span><strong>{{ enquiry.interested_course.name|default:"-" }}</strong></div>
+            <div class="info-item"><span>Preferred Center</span><strong>{{ enquiry.preferred_center.name|default:"-" }}</strong></div>
+            <div class="info-item"><span>Preferred Batch</span><strong>{{ enquiry.preferred_batch|default:"-" }}</strong></div>
+            <div class="info-item"><span>Fee Discussed</span><strong>{{ enquiry.fee_discussed|default:"-" }}</strong></div>
+            <div class="info-item"><span>Source</span><strong>{{ enquiry.source|default:"-" }}</strong></div>
+            <div class="info-item"><span>Assigned Counsellor</span><strong>{{ enquiry.assigned_counsellor.name|default:"-" }}</strong></div>
+            <div class="info-item"><span>Status</span><strong><span class="status-pill">{{ enquiry.get_status_display }}</span></strong></div>
+            <div class="info-item"><span>Probability</span><strong>{{ enquiry.get_admission_probability_display }}</strong></div>
+            <div class="info-item"><span>Next Follow-up</span><strong>{{ enquiry.next_follow_up_date|default:"-" }}</strong></div>
+            <div class="info-item"><span>Last Follow-up</span><strong>{{ enquiry.last_follow_up_date|default:"-" }}</strong></div>
+            <div class="info-item"><span>Demo Date</span><strong>{{ enquiry.demo_date|default:"-" }}</strong></div>
+            <div class="info-item"><span>Demo Result</span><strong>{{ enquiry.demo_result|default:"-" }}</strong></div>
+            <div class="info-item"><span>Lost Reason</span><strong>{{ enquiry.lost_reason|default:"-" }}</strong></div>
+            <div class="info-item" style="grid-column:1 / -1;"><span>Address</span><strong>{{ enquiry.address|default:"-" }}</strong></div>
+            <div class="info-item" style="grid-column:1 / -1;"><span>Follow-up Remarks</span><strong>{{ enquiry.follow_up_remarks|default:"-" }}</strong></div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h3 style="margin-top:0;">Conversion</h3>
+        {% if enquiry.is_converted %}
+        <p style="margin:0 0 10px;">This enquiry has already been converted to admission.</p>
+        <div><strong>Converted Date:</strong> {{ enquiry.converted_at|default:"-" }}</div>
+        <div><strong>Student Record:</strong> <a href="{% url 'student_detail' enquiry.converted_student.id %}">{{ enquiry.converted_student.name }}</a></div>
+        {% else %}
+        <p style="margin:0;">This enquiry is not converted yet. Use <strong>Convert To Admission</strong> when the student is ready to join.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

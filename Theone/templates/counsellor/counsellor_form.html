@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .form-shell { max-width:1000px; margin:0 auto; display:grid; gap:20px; }
+    .hero-card, .form-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
+    .field-group { display:grid; gap:6px; }
+    .field-group.full { grid-column:1 / -1; }
+    label { font-weight:600; color:#17324d; }
+    input, select, textarea { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    textarea { min-height:96px; resize:vertical; }
+    .error-box { margin-bottom:14px; padding:12px 14px; background:#fff0f0; color:#b23a3a; border-radius:12px; }
+    .info-box { margin-top:18px; padding:14px 16px; border-radius:14px; background:#eef6fb; color:#17324d; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { border:0; background:#17324d; color:#fff; cursor:pointer; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    @media (max-width:820px) { .form-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{% if counsellor %}Update Counsellor{% else %}Add Counsellor{% endif %}</h2>
+        <p style="margin:0;">Store counsellor profile, center, contact details, and supporting information.</p>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+        {% if error %}
+        <div class="error-box">
+            {% for item in error %}
+            <div>{{ item }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="name">Counsellor Name</label>
+                <input id="name" type="text" name="name" value="{{ form_data.name }}" required>
+            </div>
+            <div class="field-group">
+                <label for="mobile">Mobile Number</label>
+                <input id="mobile" type="text" name="mobile" value="{{ form_data.mobile }}" placeholder="Optional contact number">
+            </div>
+            <div class="field-group">
+                <label for="center">Center</label>
+                <select id="center" name="center">
+                    <option value="">Select center</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}" {% if form_data.center_id == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="age">Age</label>
+                <input id="age" type="number" name="age" value="{{ form_data.age }}">
+            </div>
+            <div class="field-group">
+                <label for="dob">Date of Birth</label>
+                <input id="dob" type="date" name="dob" value="{{ form_data.dob }}">
+            </div>
+            <div class="field-group">
+                <label for="joining_date">Joining Date</label>
+                <input id="joining_date" type="date" name="joining_date" value="{{ form_data.joining_date }}">
+            </div>
+            <div class="field-group full">
+                <label for="address">Address</label>
+                <textarea id="address" name="address">{{ form_data.address }}</textarea>
+            </div>
+        </div>
+
+        <div class="info-box">
+            This page is linked to the student records through the existing counsellor field, so the student list on the counsellor profile updates automatically.
+        </div>
+
+        <div class="action-row">
+            <button class="btn" type="submit">{% if counsellor %}Update Counsellor{% else %}Save Counsellor{% endif %}</button>
+            {% if counsellor %}
+            <a class="secondary-link" href="{% url 'counsellor_detail' counsellor.id %}">Back</a>
+            {% else %}
+            <a class="secondary-link" href="{% url 'counsellor_list' %}">Back</a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %}

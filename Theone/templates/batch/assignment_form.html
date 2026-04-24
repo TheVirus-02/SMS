@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .form-shell { max-width:900px; margin:0 auto; display:grid; gap:20px; }
+    .hero-card, .form-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
+    .field-group { display:grid; gap:6px; }
+    label { font-weight:600; color:#17324d; }
+    select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    .error-box, .info-box { padding:14px 16px; border-radius:14px; }
+    .error-box { background:#fff0f0; color:#b23a3a; }
+    .info-box { background:#eef6fb; color:#17324d; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    @media (max-width:820px) { .form-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="form-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">{% if schedule %}Update Batch Allocation{% else %}Add Batch Allocation{% endif %}</h2>
+        <p style="margin:0;">Batch: {{ batch }}</p>
+    </div>
+
+    <form method="POST" class="form-card">
+        {% csrf_token %}
+
+        {% if error %}
+        <div class="error-box">
+            {% for item in error %}
+            <div>{{ item }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="field-group">
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer" required>
+                    <option value="">Select trainer</option>
+                    {% for item in trainers %}
+                    <option value="{{ item.id }}" {% if selected_trainer_id == item.id|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-group">
+                <label for="center">Center</label>
+                <select id="center" name="center" required>
+                    <option value="">Select center</option>
+                    {% for item in centers %}
+                    <option value="{{ item.id }}" {% if selected_center_id == item.id|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="info-box" style="margin-top:18px;">
+            This updates the same trainer schedule record used by the trainer schedule page, so both pages always stay in sync.
+        </div>
+
+        <div class="action-row">
+            <button class="btn" type="submit">{% if schedule %}Update Allocation{% else %}Save Allocation{% endif %}</button>
+            <a class="secondary-link" href="{% url 'batch_detail' batch.id %}">Back to Batch</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

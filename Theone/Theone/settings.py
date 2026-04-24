@@ -103,9 +103,11 @@ load_env_file(BASE_DIR / ".env", BASE_DIR / "sms.env")
 
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-me")
-DEBUG = get_bool("DEBUG", False)
-ALLOWED_HOSTS = get_list("ALLOWED_HOSTS", "127.0.0.1,localhost")
-CSRF_TRUSTED_ORIGINS = get_list("CSRF_TRUSTED_ORIGINS", "")
+DEBUG = get_bool("DEBUG", True)
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+#get_list( "127.0.0.1", "localhost") #"ALLOWED_HOSTS",
+CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']
+# CSRF_TRUSTED_ORIGINS = get_list("CSRF_TRUSTED_ORIGINS", "")
 
 
 INSTALLED_APPS = [
@@ -116,6 +118,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "student",
+    'django_extensions',
 ]
 
 MIDDLEWARE = [
@@ -171,7 +174,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
@@ -193,16 +196,27 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 if not DEBUG:
-    SECURE_SSL_REDIRECT = get_bool("SECURE_SSL_REDIRECT", True)
-    SESSION_COOKIE_SECURE = get_bool("SESSION_COOKIE_SECURE", True)
-    CSRF_COOKIE_SECURE = get_bool("CSRF_COOKIE_SECURE", True)
+    SECURE_SSL_REDIRECT = get_bool("SECURE_SSL_REDIRECT", False) #True
+    SESSION_COOKIE_SECURE = get_bool("SESSION_COOKIE_SECURE",False) # True
+    CSRF_COOKIE_SECURE = get_bool("CSRF_COOKIE_SECURE",False) # True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_REFERRER_POLICY = "same-origin"
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
-    SECURE_HSTS_PRELOAD = get_bool("SECURE_HSTS_PRELOAD", True)
+    # SECURE_REFERRER_POLICY = "same-origin"
+    # SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS",0))
+    # "31536000"
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = get_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS",False)
+    # True
+    SECURE_HSTS_PRELOAD = get_bool("SECURE_HSTS_PRELOAD", False)
+    #True
     X_FRAME_OPTIONS = "DENY"
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+SMS_ENABLED = get_bool("SMS_ENABLED", False)
+SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "twilio").strip().lower()
+SMS_DEFAULT_COUNTRY_CODE = os.environ.get("SMS_DEFAULT_COUNTRY_CODE", "+91").strip()
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER", "").strip()

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .toolbar-card, .batch-card, .message-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .message-card { background:#eef6fb; border-left:4px solid #17324d; }
+    .toolbar-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto auto; gap:12px; align-items:end; }
+    .batch-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px; }
+    .batch-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .meta-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .meta-pill, .tag { background:#eef6fb; color:#17324d; border-radius:999px; padding:7px 12px; font-size:13px; font-weight:700; }
+    .assignment-list { display:grid; gap:10px; margin-top:18px; }
+    .assignment-item { border:1px solid #dce6ef; border-radius:14px; padding:12px 14px; background:#fbfdff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .section-head { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
+    .toggle-btn { background:#eef5fb; color:#17324d; border:1px solid #cfe1ef; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; transition:background 0.2s ease, color 0.2s ease, transform 0.2s ease; }
+    .toggle-btn:hover { background:#dfeef8; transform:translateY(-1px); }
+    .toggle-btn.is-open { background:#17324d; color:#fff; border-color:#17324d; }
+    .collapsible { overflow:hidden; max-height:0; opacity:0; transition:max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease; margin-top:0; }
+    .collapsible.is-open { opacity:1; margin-top:18px; }
+    .grid-wrap { overflow:auto; border:1px solid #dce6ef; border-radius:16px; }
+    .grid-table { min-width:900px; width:100%; border-collapse:collapse; }
+    .grid-table th, .grid-table td { padding:14px; border-bottom:1px solid #e6ebf1; border-right:1px solid #eef2f6; text-align:left; vertical-align:top; }
+    .grid-table th { background:#f5f8fb; white-space:nowrap; }
+    .grid-time { min-width:130px; font-weight:700; color:#17324d; }
+    .grid-cell { min-width:210px; background:#fff; }
+    .grid-stack { display:grid; gap:8px; }
+    .grid-entry { background:#fbfdff; border:1px solid #dce6ef; border-radius:12px; padding:10px 12px; }
+    .grid-entry a { color:#17324d; text-decoration:none; font-weight:700; }
+    .grid-empty { color:#7a8898; font-style:italic; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
+    .btn { background:#17324d; color:#fff; }
+    .secondary-link { background:#eef2f7; color:#17324d; }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    @media (max-width:900px) { .toolbar-grid { grid-template-columns:1fr; } }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="message-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Batch System</h2>
+        <p style="margin:0;">Create batch times, attach trainer-center allocations, and keep the batch page and trainer schedule page aligned from the same data.</p>
+        <div class="action-row">
+            <a class="btn" href="{% url 'add_batch' %}">Add New Batch</a>
+            <form method="POST" action="{% url 'create_standard_batches' %}" style="margin:0;">
+                {% csrf_token %}
+                <button class="secondary-link" type="submit">Create Standard Batches</button>
+            </form>
+        </div>
+    </div>
+
+    <form method="GET" class="toolbar-card">
+        <div class="toolbar-grid">
+            <div>
+                <label for="q" style="display:block;font-weight:600;margin-bottom:6px;color:#17324d;">Search Batch, Trainer, Center</label>
+                <input id="q" name="q" type="text" value="{{ query }}" placeholder="Search by name, time, trainer, or center">
+            </div>
+            <button class="btn" type="submit">Search</button>
+            {% if query %}
+            <a class="secondary-link" href="{% url 'batch_list' %}">Clear</a>
+            {% endif %}
+            <div class="meta-pill">{{ total_batches }} Batch{{ total_batches|pluralize }}</div>
+        </div>
+    </form>
+
+    <div class="toolbar-card">
+        <div class="section-head">
+            <div>
+                <h3 style="margin:0;">Grid View</h3>
+                <div style="color:#617384;margin-top:6px;">See batch time in rows and centers in columns for quick planning.</div>
+            </div>
+            <button class="toggle-btn" type="button" data-target="batch-grid-panel">Open Grid View</button>
+        </div>
+
+        <div id="batch-grid-panel" class="collapsible">
+            <div class="grid-wrap">
+                <table class="grid-table">
+                    <tr>
+                        <th class="grid-time">Batch Time</th>
+                        {% for center in centers %}
+                        <th>{{ center.name }}</th>
+                        {% endfor %}
+                    </tr>
+                    {% for row in grid_rows %}
+                    <tr>
+                        <td class="grid-time">
+                            <div><a href="{% url 'batch_detail' row.batch.id %}" style="color:#17324d;text-decoration:none;">{{ row.batch }}</a></div>
+                            <div style="margin-top:6px;color:#617384;">{{ row.student_count }} Student{{ row.student_count|pluralize }}</div>
+                        </td>
+                        {% for cell in row.cells %}
+                        <td class="grid-cell">
+                            <div class="grid-stack">
+                                {% for schedule in cell.schedules %}
+                                <div class="grid-entry">
+                                    <a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a>
+                                    <div style="margin-top:4px;color:#617384;">{{ cell.center.name }}</div>
+                                </div>
+                                {% empty %}
+                                <div class="grid-empty">Empty</div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ centers|length|add:1 }}">No batch found for the current search.</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="batch-grid">
+        {% for batch in batches %}
+        <div class="batch-card">
+            <div class="batch-head">
+                <div>
+                    <h3 style="margin:0 0 6px;"><a href="{% url 'batch_detail' batch.id %}" style="text-decoration:none;color:#17324d;">{{ batch }}</a></h3>
+                    <div style="color:#617384;">Batch Time: {{ batch.time|time:"h:i A" }}</div>
+                </div>
+                <div class="meta-pill">{{ batch.schedule_count }} Allocation{{ batch.schedule_count|pluralize }}</div>
+            </div>
+
+            <div class="meta-row">
+                <span class="meta-pill">{{ batch.student_count }} Student{{ batch.student_count|pluralize }}</span>
+                {% if batch.name %}
+                <span class="meta-pill">{{ batch.name }}</span>
+                {% endif %}
+            </div>
+
+            <div class="assignment-list">
+                {% for schedule in batch.trainerschedule_set.all %}
+                <div class="assignment-item">
+                    <strong>{{ schedule.center.name|default:"Center Pending" }}</strong>
+                    <div style="margin-top:6px;">Trainer: {{ schedule.trainer.name }}</div>
+                </div>
+                {% empty %}
+                <div class="assignment-item">No trainer-center allocation added yet.</div>
+                {% endfor %}
+            </div>
+
+            <div class="action-row">
+                <a class="btn" href="{% url 'batch_detail' batch.id %}">Open</a>
+                <a class="secondary-link" href="{% url 'update_batch' batch.id %}">Edit Batch</a>
+                <a class="danger-link" href="{% url 'delete_batch' batch.id %}" onclick="return confirm('Delete this batch?')">Delete</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="batch-card">
+            <p style="margin:0;">No batch found for the current search.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function setPanelState(button, panel, open) {
+            button.classList.toggle('is-open', open);
+            button.textContent = open
+                ? button.textContent.replace('Open', 'Hide')
+                : button.textContent.replace('Hide', 'Open');
+            panel.classList.toggle('is-open', open);
+            panel.style.maxHeight = open ? panel.scrollHeight + 'px' : '0px';
+        }
+
+        document.querySelectorAll('.toggle-btn').forEach(function (button) {
+            var panel = document.getElementById(button.dataset.target);
+            if (!panel) {
+                return;
+            }
+
+            panel.style.maxHeight = '0px';
+            button.addEventListener('click', function () {
+                var open = !button.classList.contains('is-open');
+                setPanelState(button, panel, open);
+            });
+        });
+
+        window.addEventListener('resize', function () {
+            document.querySelectorAll('.toggle-btn.is-open').forEach(function (button) {
+                var panel = document.getElementById(button.dataset.target);
+                if (panel) {
+                    panel.style.maxHeight = panel.scrollHeight + 'px';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
