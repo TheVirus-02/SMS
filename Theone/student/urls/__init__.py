@@ -1,4 +1,5 @@
 from .attendance import urlpatterns as attendance_urlpatterns
+from .automation import urlpatterns as automation_urlpatterns
 from .batches import urlpatterns as batch_urlpatterns
 from .counsellors import urlpatterns as counsellor_urlpatterns
 from .courses import urlpatterns as course_urlpatterns
@@ -20,6 +21,7 @@ urlpatterns = (
     + installment_urlpatterns
     + trainer_urlpatterns
     + attendance_urlpatterns
+    + automation_urlpatterns
     + logistics_urlpatterns
     + exam_urlpatterns
 )

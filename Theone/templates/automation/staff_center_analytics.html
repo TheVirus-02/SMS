@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .stats-grid, .filter-grid { display:grid; gap:16px; }
+    .stats-grid { grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .filter-grid { grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); align-items:end; }
+    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .section-title { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+    .meta { color:var(--text-muted); }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Staff / Center Analytics</h2>
+        <p style="margin:0;">Compare center performance, counsellor conversions, trainer load, pending fee pressure, and operational weak points.</p>
+        <div class="actions-row">
+            <a class="secondary-link" href="{% url 'reporting_dashboard' %}">Reports and Exports</a>
+            <a class="secondary-link" href="{% url 'reminder_center' %}">Reminder Center</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">Centers<strong>{{ total_centers }}</strong></div>
+            <div class="stat-box">Counsellors<strong>{{ total_counsellors }}</strong></div>
+            <div class="stat-box">Trainers<strong>{{ total_trainers }}</strong></div>
+        </div>
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="filter-grid">
+            <div><label for="date_from">From</label><input id="date_from" type="date" name="date_from" value="{{ date_from }}"></div>
+            <div><label for="date_to">To</label><input id="date_to" type="date" name="date_to" value="{{ date_to }}"></div>
+        </div>
+        <div class="actions-row">
+            <button class="btn" type="submit">Apply Range</button>
+            <a class="secondary-link" href="{% url 'staff_center_analytics' %}">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Center Analytics</h3>
+            <div class="meta">{{ date_from }} to {{ date_to }}</div>
+        </div>
+        <table>
+            <tr><th>Center</th><th>Enquiries</th><th>Admissions</th><th>Conversions</th><th>Conversion %</th><th>Collection</th><th>Pending Fee</th><th>Pending Students</th></tr>
+            {% for row in center_rows %}
+            <tr><td>{{ row.name }}</td><td>{{ row.enquiries }}</td><td>{{ row.admissions }}</td><td>{{ row.conversions }}</td><td>{{ row.conversion_rate }}%</td><td>{{ row.collection }}</td><td>{{ row.pending_fee }}</td><td>{{ row.pending_students }}</td></tr>
+            {% empty %}
+            <tr><td colspan="8">No center analytics available.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Counsellor Analytics</h3>
+            <div class="meta">Conversion and follow-up accountability</div>
+        </div>
+        <table>
+            <tr><th>Counsellor</th><th>Center</th><th>Enquiries</th><th>Admissions</th><th>Conversions</th><th>Conversion %</th><th>Pending Fee</th><th>Pending Students</th><th>Overdue Follow-Ups</th></tr>
+            {% for row in counsellor_rows %}
+            <tr><td>{{ row.name }}</td><td>{{ row.center_name }}</td><td>{{ row.enquiries }}</td><td>{{ row.admissions }}</td><td>{{ row.conversions }}</td><td>{{ row.conversion_rate }}%</td><td>{{ row.pending_fee }}</td><td>{{ row.pending_students }}</td><td>{{ row.overdue_follow_ups }}</td></tr>
+            {% empty %}
+            <tr><td colspan="9">No counsellor analytics available.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Trainer Analytics</h3>
+            <div class="meta">Student load and pending fee pressure</div>
+        </div>
+        <table>
+            <tr><th>Trainer</th><th>Students</th><th>Active Students</th><th>Pending Students</th><th>Pending Fee</th><th>Collection</th></tr>
+            {% for row in trainer_rows %}
+            <tr><td>{{ row.name }}</td><td>{{ row.students }}</td><td>{{ row.active_students }}</td><td>{{ row.pending_students }}</td><td>{{ row.pending_fee }}</td><td>{{ row.collection }}</td></tr>
+            {% empty %}
+            <tr><td colspan="6">No trainer analytics available.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

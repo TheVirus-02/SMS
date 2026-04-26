@@ -25,13 +25,13 @@
     input {
         width: 100%;
         padding: 10px 12px;
-        border: 1px solid #d8e0ea;
+        border: 1px solid var(--border);
         border-radius: 10px;
         box-sizing: border-box;
     }
 
     .btn {
-        background: #17324d;
+        background: var(--brand-black);
         color: #fff;
         border: 0;
         border-radius: 10px;
@@ -43,12 +43,12 @@
     .stat {
         padding: 12px;
         border-radius: 12px;
-        background: #f5f8fb;
+        background: var(--surface-muted);
         margin-bottom: 12px;
     }
 
     .muted {
-        color: #617384;
+        color: var(--text-muted);
     }
 
     @media (max-width: 720px) {
@@ -99,3 +99,5 @@
     </form>
 </div>
 {% endblock %}
+
+

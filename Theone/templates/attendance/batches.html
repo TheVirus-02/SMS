@@ -17,7 +17,7 @@
     }
 
     .hero-card {
-        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        background: linear-gradient(135deg, var(--brand-black), var(--brand-red));
         color: #fff;
     }
 
@@ -36,7 +36,7 @@
     }
 
     .batch-link {
-        color: #17324d;
+        color: var(--brand-black);
         text-decoration: none;
         font-weight: 700;
         font-size: 22px;
@@ -55,8 +55,8 @@
 
     .summary-box,
     .center-box {
-        background: #f7fbfe;
-        border: 1px solid #dce8f2;
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
         border-radius: 14px;
         padding: 14px;
     }
@@ -65,7 +65,7 @@
     .center-box strong {
         display: block;
         font-size: 24px;
-        color: #17324d;
+        color: var(--brand-black);
         margin-top: 6px;
     }
 
@@ -74,7 +74,7 @@
     }
 
     .meta {
-        color: #617384;
+        color: var(--text-muted);
     }
 
     .filter-grid {
@@ -88,16 +88,16 @@
         display: block;
         font-weight: 600;
         margin-bottom: 6px;
-        color: #17324d;
+        color: var(--brand-black);
     }
 
     input {
         width: 100%;
         box-sizing: border-box;
         padding: 11px 12px;
-        border: 1px solid #cfd8e3;
+        border: 1px solid var(--border);
         border-radius: 10px;
-        background: #f9fbfd;
+        background: #fff8f8;
     }
 
     .btn,
@@ -111,14 +111,14 @@
 
     .btn {
         border: 0;
-        background: #17324d;
+        background: var(--brand-black);
         color: #fff;
         cursor: pointer;
     }
 
     .clear-link {
-        background: #eef2f7;
-        color: #17324d;
+        background: var(--surface-muted);
+        color: var(--brand-black);
     }
 
     .trainer-tags {
@@ -129,8 +129,8 @@
     }
 
     .trainer-tag {
-        background: #eef6fb;
-        color: #0f4c81;
+        background: var(--surface-muted);
+        color: var(--brand-red);
         border-radius: 999px;
         padding: 6px 10px;
         font-size: 12px;
@@ -224,3 +224,5 @@
     </div>
 </div>
 {% endblock %}
+
+

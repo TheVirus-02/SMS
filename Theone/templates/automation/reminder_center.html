@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .table-card, .status-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .actions-row, .mini-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .actions-row { margin-top:18px; }
+    .btn, .secondary-link, .mini-btn { display:inline-block; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn, .mini-btn { background:var(--brand-black); color:#fff; border:0; cursor:pointer; }
+    .btn, .secondary-link { padding:11px 18px; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .mini-btn { padding:8px 12px; font-size:12px; }
+    .section-title { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .meta { color:var(--text-muted); }
+    .status-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
+    .status-chip { display:inline-block; padding:6px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-size:12px; font-weight:700; }
+    .system-ready { color:#1f7a3d; }
+</style>
+
+<div class="page-shell">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="table-card">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Reminder Center</h2>
+        <p style="margin:0;">Run manual reminders safely, track communication, and clear daily follow-up pressure from one place.</p>
+        <div class="actions-row">
+            <a class="secondary-link" href="{% url 'communication_log_list' %}">Communication Logs</a>
+            <a class="secondary-link" href="{% url 'daily_summary' %}">Daily Summary</a>
+            <a class="secondary-link" href="{% url 'staff_center_analytics' %}">Staff / Center Analytics</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">Pending Fee Cases<strong>{{ pending_fee_alert_count }}</strong></div>
+            <div class="stat-box">Overdue Fee Cases<strong>{{ overdue_fee_alert_count }}</strong></div>
+            <div class="stat-box">Today Follow-Ups<strong>{{ today_follow_up_alert_count }}</strong></div>
+            <div class="stat-box">Overdue Follow-Ups<strong>{{ overdue_follow_up_alert_count }}</strong></div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Bulk Fee Reminders</h3>
+            <div class="meta">Send many student fee reminders in one action</div>
+        </div>
+        <form method="post" action="{% url 'send_bulk_fee_reminders' %}">
+            {% csrf_token %}
+            <div class="status-grid">
+                <div>
+                    <label for="fee_center">Center</label>
+                    <select id="fee_center" name="center">
+                        <option value="">All Centers</option>
+                        {% for center in centers %}
+                        <option value="{{ center.id }}">{{ center.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="fee_scope">Scope</label>
+                    <select id="fee_scope" name="scope">
+                        <option value="overdue">Overdue Only</option>
+                        <option value="all">All Pending</option>
+                        <option value="no_payment">No Payment Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="actions-row">
+                <button class="btn" type="submit">Send Bulk Fee Reminders</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Bulk Follow-Up Reminders</h3>
+            <div class="meta">Send many enquiry follow-up messages in one action</div>
+        </div>
+        <form method="post" action="{% url 'send_bulk_follow_up_reminders' %}">
+            {% csrf_token %}
+            <div class="status-grid">
+                <div>
+                    <label for="follow_up_counsellor">Counsellor</label>
+                    <select id="follow_up_counsellor" name="counsellor">
+                        <option value="">All Counsellors</option>
+                        {% for counsellor in counsellors %}
+                        <option value="{{ counsellor.id }}">{{ counsellor.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="follow_up_scope">Scope</label>
+                    <select id="follow_up_scope" name="scope">
+                        <option value="overdue">Overdue Only</option>
+                        <option value="today">Today Only</option>
+                        <option value="stale">Stale Enquiries</option>
+                        <option value="all">All Open Follow-Ups</option>
+                    </select>
+                </div>
+            </div>
+            <div class="actions-row">
+                <button class="btn" type="submit">Send Bulk Follow-Up Reminders</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="status-card">
+        <div class="section-title">
+            <h3 style="margin:0;">SMS Configuration Status</h3>
+            <span class="status-chip {% if sms_status.is_ready %}system-ready{% endif %}">{{ sms_status.status_label }}</span>
+        </div>
+        <div class="status-grid">
+            <div><strong>Provider:</strong> {{ sms_status.provider|upper }}</div>
+            <div><strong>From Number:</strong> {{ sms_status.from_number }}</div>
+            <div><strong>Default Country Code:</strong> {{ sms_status.default_country_code }}</div>
+            <div><strong>Missing Setup:</strong> {% if sms_status.missing_fields %}{{ sms_status.missing_fields|join:", " }}{% else %}None{% endif %}</div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Priority Fee Reminder Cases</h3>
+            <div class="meta">Students with pending fees</div>
+        </div>
+        <table>
+            <tr><th>Student</th><th>Center / Trainer</th><th>Fee Summary</th><th>Action</th></tr>
+            {% for student in overdue_students %}
+            <tr>
+                <td><a href="{% url 'student_detail' student.id %}"><strong>{{ student.name }}</strong></a><br><span class="meta">{{ student.student_id }}</span><br><span class="meta">{{ student.mobile_no }}</span></td>
+                <td>{{ student.center.name|default:"-" }}<br><span class="meta">{{ student.trainer.name|default:"-" }}</span></td>
+                <td><div><strong>Total:</strong> {{ student.course_fee|default:0 }}</div><div><strong>Paid:</strong> {{ student.total_paid }}</div><div><strong>Pending:</strong> {{ student.remaining_fee }}</div></td>
+                <td>
+                    <div class="mini-actions">
+                        <form method="post" action="{% url 'send_fee_reminder' student.id %}">
+                            {% csrf_token %}
+                            <button class="mini-btn" type="submit">Send Reminder</button>
+                        </form>
+                        <a class="secondary-link" href="{% url 'add_installment' student.id %}">Add Installment</a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No overdue fee reminder case right now.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Today and Overdue Follow-Ups</h3>
+            <div class="meta">Reminder actions for enquiry team</div>
+        </div>
+        <table>
+            <tr><th>Enquiry</th><th>Course / Center</th><th>Follow-Up Date</th><th>Action</th></tr>
+            {% for enquiry in overdue_follow_ups %}
+            <tr>
+                <td><a href="{% url 'enquiry_detail' enquiry.id %}"><strong>{{ enquiry.name }}</strong></a><br><span class="meta">{{ enquiry.mobile_no }}</span><br><span class="meta">{{ enquiry.assigned_counsellor.name|default:"-" }}</span></td>
+                <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                <td>{{ enquiry.next_follow_up_date|default:"-" }}</td>
+                <td>
+                    <div class="mini-actions">
+                        <form method="post" action="{% url 'send_enquiry_follow_up_reminder' enquiry.id %}">
+                            {% csrf_token %}
+                            <button class="mini-btn" type="submit">Send Follow-Up</button>
+                        </form>
+                        <a class="secondary-link" href="{% url 'update_enquiry' enquiry.id %}">Update</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            {% for enquiry in today_follow_ups %}
+            <tr>
+                <td><a href="{% url 'enquiry_detail' enquiry.id %}"><strong>{{ enquiry.name }}</strong></a><br><span class="meta">{{ enquiry.mobile_no }}</span><br><span class="meta">{{ enquiry.assigned_counsellor.name|default:"-" }}</span></td>
+                <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                <td>{{ enquiry.next_follow_up_date|default:"-" }}</td>
+                <td>
+                    <div class="mini-actions">
+                        <form method="post" action="{% url 'send_enquiry_follow_up_reminder' enquiry.id %}">
+                            {% csrf_token %}
+                            <button class="mini-btn" type="submit">Send Follow-Up</button>
+                        </form>
+                        <a class="secondary-link" href="{% url 'update_enquiry' enquiry.id %}">Update</a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No enquiry follow-up reminders pending right now.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <h3 style="margin:0;">Recent Communication</h3>
+            <div class="meta">Latest reminder history</div>
+        </div>
+        <table>
+            <tr><th>Time</th><th>Recipient</th><th>Category</th><th>Status</th><th>Detail</th></tr>
+            {% for log in recent_logs %}
+            <tr>
+                <td>{{ log.created_at|date:"d M Y H:i" }}</td>
+                <td>{{ log.recipient_name }}</td>
+                <td>{{ log.get_category_display }}</td>
+                <td>{{ log.get_status_display }}</td>
+                <td>{{ log.response_detail|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No communication log yet.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

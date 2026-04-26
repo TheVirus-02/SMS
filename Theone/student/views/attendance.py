@@ -193,3 +193,92 @@ def parse_selected_date(raw_date):
         except ValueError:
             pass
     return date.today()
+
+
+def daily_absentees(request):
+    selected_date = parse_selected_date(request.GET.get("date"))
+    center_id = request.GET.get("center", "").strip()
+    batch_id = request.GET.get("batch", "").strip()
+
+    records_qs = Attendance.objects.select_related(
+        "student__center", "student__batch", "student__trainer"
+    ).filter(date=selected_date, status="absent")
+    if center_id:
+        records_qs = records_qs.filter(student__center_id=center_id)
+    if batch_id:
+        records_qs = records_qs.filter(student__batch_id=batch_id)
+
+    records = list(records_qs.order_by("student__center__name", "student__batch__time", "student__name"))
+    return render(
+        request,
+        "attendance/daily_absentees.html",
+        {
+            "selected_date": selected_date,
+            "records": records,
+            "center_id": center_id,
+            "batch_id": batch_id,
+            "centers": Center.objects.all().order_by("name"),
+            "batches": Batch.objects.all().order_by("time"),
+            "total_absentees": len(records),
+        },
+    )
+
+
+def attendance_monthly_summary(request):
+    today = date.today()
+    month_value = request.GET.get("month", "").strip()
+    center_id = request.GET.get("center", "").strip()
+    batch_id = request.GET.get("batch", "").strip()
+
+    try:
+        selected_month = datetime.strptime(month_value, "%Y-%m").date() if month_value else today.replace(day=1)
+    except ValueError:
+        selected_month = today.replace(day=1)
+
+    students_qs = Student.objects.select_related("center", "batch", "trainer").all()
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+    if batch_id:
+        students_qs = students_qs.filter(batch_id=batch_id)
+    students = list(students_qs.order_by("center__name", "batch__time", "name"))
+
+    attendance_records = Attendance.objects.filter(
+        student__in=students,
+        date__year=selected_month.year,
+        date__month=selected_month.month,
+    )
+    attendance_map = {}
+    for record in attendance_records:
+        bucket = attendance_map.setdefault(record.student_id, {"present": 0, "absent": 0, "leave": 0})
+        bucket[record.status] = bucket.get(record.status, 0) + 1
+
+    summary_rows = []
+    for student in students:
+        counts = attendance_map.get(student.id, {"present": 0, "absent": 0, "leave": 0})
+        total_marked = counts["present"] + counts["absent"] + counts["leave"]
+        attendance_percentage = round((counts["present"] / total_marked) * 100, 2) if total_marked else 0
+        summary_rows.append(
+            {
+                "student": student,
+                "present": counts["present"],
+                "absent": counts["absent"],
+                "leave": counts["leave"],
+                "total_marked": total_marked,
+                "attendance_percentage": attendance_percentage,
+            }
+        )
+
+    return render(
+        request,
+        "attendance/monthly_summary.html",
+        {
+            "selected_month": selected_month,
+            "month_value": selected_month.strftime("%Y-%m"),
+            "summary_rows": summary_rows,
+            "center_id": center_id,
+            "batch_id": batch_id,
+            "centers": Center.objects.all().order_by("name"),
+            "batches": Batch.objects.all().order_by("time"),
+            "total_students": len(summary_rows),
+        },
+    )

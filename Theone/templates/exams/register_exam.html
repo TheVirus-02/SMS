@@ -32,7 +32,7 @@
     textarea {
         width: 100%;
         padding: 10px 12px;
-        border: 1px solid #d8e0ea;
+        border: 1px solid var(--border);
         border-radius: 10px;
         box-sizing: border-box;
     }
@@ -42,13 +42,13 @@
         gap: 10px;
         align-items: start;
         padding: 12px;
-        border: 1px solid #dfe6ef;
+        border: 1px solid var(--border);
         border-radius: 12px;
         margin-bottom: 10px;
     }
 
     .btn {
-        background: #17324d;
+        background: var(--brand-black);
         color: #fff;
         border: 0;
         border-radius: 10px;
@@ -58,15 +58,15 @@
     }
 
     .muted {
-        color: #617384;
+        color: var(--text-muted);
     }
 
     .pill {
         display: inline-block;
         padding: 4px 10px;
         border-radius: 999px;
-        background: #eef5fb;
-        color: #1c5788;
+        background: var(--surface-muted);
+        color: var(--brand-red);
         font-size: 12px;
         font-weight: 700;
     }
@@ -178,7 +178,7 @@
     <div class="card">
         <h3 style="margin-top: 0;">Existing Exam Records</h3>
         {% for reg in existing_registrations %}
-            <div style="padding: 12px 0; border-bottom: 1px solid #edf2f7;">
+            <div style="padding: 12px 0; border-bottom: 1px solid var(--surface-muted);">
                 <strong>{{ reg.course_name }}</strong><br>
                 <span class="muted">{{ reg.exam_date }} | Receipt {{ reg.receipt_no }}</span><br>
                 <span class="pill">{{ reg.get_payment_method_display }}</span>
@@ -196,3 +196,5 @@
     </div>
 </div>
 {% endblock %}
+
+

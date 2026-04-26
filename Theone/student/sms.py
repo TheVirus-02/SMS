@@ -5,7 +5,7 @@ from urllib import error, parse, request
 
 from django.conf import settings
 
-from .models import SmsLog
+from .models import CommunicationLog, SmsLog
 
 
 @dataclass
@@ -116,6 +116,147 @@ def send_exam_registration_sms(student, registration) -> SmsSendResult:
         to_number=to_number,
         message_body=message_body,
         status=SmsLog.STATUS_SENT if result.sent else SmsLog.STATUS_FAILED,
+        detail=result.detail,
+        provider_message_id=result.provider_message_id,
+    )
+
+
+def build_fee_reminder_message(student) -> str:
+    due_amount = getattr(student, "remaining_fee", 0)
+    course_names = ", ".join(course.name for course in student.courses.all()) or "your course"
+    return (
+        f"Hi {student.name}, this is a reminder from Matrix Computer Education. "
+        f"Your pending fee for {course_names} is {due_amount}. Please contact the institute and complete the payment."
+    )
+
+
+def build_enquiry_follow_up_message(enquiry) -> str:
+    course_name = enquiry.interested_course.name if enquiry.interested_course else "your selected course"
+    center_name = enquiry.preferred_center.name if enquiry.preferred_center else "our center"
+    return (
+        f"Hi {enquiry.name}, this is Matrix Computer Education. "
+        f"We are following up regarding your enquiry for {course_name} at {center_name}. "
+        f"Please reply or contact us for admission support."
+    )
+
+
+def create_communication_log(
+    *,
+    student=None,
+    enquiry=None,
+    category=CommunicationLog.CATEGORY_GENERAL,
+    channel=CommunicationLog.CHANNEL_SMS,
+    provider="twilio",
+    recipient_name="",
+    to_number="",
+    message_body="",
+    status=CommunicationLog.STATUS_SKIPPED,
+    detail="",
+    provider_message_id="",
+):
+    CommunicationLog.objects.create(
+        student=student,
+        enquiry=enquiry,
+        category=category,
+        channel=channel,
+        provider=provider,
+        recipient_name=recipient_name,
+        phone_number=to_number,
+        message_body=message_body,
+        status=status,
+        provider_message_id=provider_message_id or None,
+        response_detail=detail,
+    )
+    return SmsSendResult(
+        sent=status == CommunicationLog.STATUS_SENT,
+        skipped=status == CommunicationLog.STATUS_SKIPPED,
+        detail=detail,
+        provider_message_id=provider_message_id,
+    )
+
+
+def send_general_sms(*, student=None, enquiry=None, raw_number="", message_body="", category=CommunicationLog.CATEGORY_GENERAL):
+    provider = getattr(settings, "SMS_PROVIDER", "").strip().lower() or "twilio"
+    recipient_name = ""
+    if student is not None:
+        recipient_name = student.name
+        raw_number = raw_number or getattr(student, "mobile_no", "")
+    elif enquiry is not None:
+        recipient_name = enquiry.name
+        raw_number = raw_number or getattr(enquiry, "mobile_no", "")
+    to_number = normalize_phone_number(raw_number)
+
+    if not getattr(settings, "SMS_ENABLED", False):
+        return create_communication_log(
+            student=student,
+            enquiry=enquiry,
+            category=category,
+            provider=provider,
+            recipient_name=recipient_name,
+            to_number=to_number,
+            message_body=message_body,
+            status=CommunicationLog.STATUS_SKIPPED,
+            detail="SMS is disabled.",
+        )
+
+    if provider != "twilio":
+        return create_communication_log(
+            student=student,
+            enquiry=enquiry,
+            category=category,
+            provider=provider,
+            recipient_name=recipient_name,
+            to_number=to_number,
+            message_body=message_body,
+            status=CommunicationLog.STATUS_SKIPPED,
+            detail="SMS provider is not supported.",
+        )
+
+    if not to_number:
+        return create_communication_log(
+            student=student,
+            enquiry=enquiry,
+            category=category,
+            provider=provider,
+            recipient_name=recipient_name or "Unknown",
+            to_number="",
+            message_body=message_body,
+            status=CommunicationLog.STATUS_SKIPPED,
+            detail="Recipient mobile number is missing.",
+        )
+
+    account_sid = getattr(settings, "TWILIO_ACCOUNT_SID", "")
+    auth_token = getattr(settings, "TWILIO_AUTH_TOKEN", "")
+    from_number = getattr(settings, "TWILIO_FROM_NUMBER", "")
+    if not all([account_sid, auth_token, from_number]):
+        return create_communication_log(
+            student=student,
+            enquiry=enquiry,
+            category=category,
+            provider=provider,
+            recipient_name=recipient_name,
+            to_number=to_number,
+            message_body=message_body,
+            status=CommunicationLog.STATUS_SKIPPED,
+            detail="Twilio settings are incomplete.",
+        )
+
+    result = send_twilio_sms(
+        account_sid=account_sid,
+        auth_token=auth_token,
+        from_number=from_number,
+        to_number=to_number,
+        message_body=message_body,
+    )
+    return create_communication_log(
+        student=student,
+        enquiry=enquiry,
+        category=category,
+        provider=provider,
+        recipient_name=recipient_name,
+        to_number=to_number,
+        message_body=message_body,
+        status=CommunicationLog.STATUS_SENT if result.sent else CommunicationLog.STATUS_FAILED,
         detail=result.detail,
         provider_message_id=result.provider_message_id,
     )

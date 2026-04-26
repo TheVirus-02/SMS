@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .meta { color:var(--text-muted); }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Daily Summary</h2>
+        <p style="margin:0;">One screen for daily admissions, enquiries, follow-ups, collections, and absentees.</p>
+        <div class="stats-grid">
+            <div class="stat-box">Admissions<strong>{{ admissions_count }}</strong></div>
+            <div class="stat-box">Enquiries<strong>{{ enquiries_count }}</strong></div>
+            <div class="stat-box">Follow-Ups<strong>{{ follow_up_count }}</strong></div>
+            <div class="stat-box">Collections<strong>{{ today_collection_total }}</strong></div>
+            <div class="stat-box">Absentees<strong>{{ absentee_count }}</strong></div>
+        </div>
+    </div>
+
+    <form method="get" class="filter-card">
+        <label for="date">Date</label>
+        <input id="date" type="date" name="date" value="{{ summary_date|date:'Y-m-d' }}">
+        <div class="actions-row">
+            <button class="btn" type="submit">Apply</button>
+            <a class="secondary-link" href="{% url 'daily_summary' %}">Today</a>
+        </div>
+    </form>
+
+    <div class="table-card">
+        <h3 style="margin-top:0;">Center Summary</h3>
+        <table>
+            <tr><th>Center</th><th>Admissions</th><th>Enquiries</th><th>Collections</th><th>Absentees</th></tr>
+            {% for row in center_rows %}
+            <tr><td>{{ row.name }}</td><td>{{ row.admissions }}</td><td>{{ row.enquiries }}</td><td>{{ row.collections }}</td><td>{{ row.absentees }}</td></tr>
+            {% empty %}
+            <tr><td colspan="5">No center summary available for this date.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <h3 style="margin-top:0;">Admissions</h3>
+        <table>
+            <tr><th>Student</th><th>Center / Trainer</th><th>Admission Fee</th></tr>
+            {% for student in admissions %}
+            <tr><td><a href="{% url 'student_detail' student.id %}"><strong>{{ student.name }}</strong></a><br><span class="meta">{{ student.student_id }}</span></td><td>{{ student.center.name|default:"-" }}<br><span class="meta">{{ student.trainer.name|default:"-" }}</span></td><td>{{ student.paid_fee|default:0 }}</td></tr>
+            {% empty %}
+            <tr><td colspan="3">No admissions on this date.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <h3 style="margin-top:0;">Enquiries and Follow-Ups</h3>
+        <table>
+            <tr><th>Name</th><th>Center / Counsellor</th><th>Type</th><th>Date</th></tr>
+            {% for enquiry in enquiries %}
+            <tr><td>{{ enquiry.name }}</td><td>{{ enquiry.preferred_center.name|default:"-" }}<br><span class="meta">{{ enquiry.assigned_counsellor.name|default:"-" }}</span></td><td>New Enquiry</td><td>{{ enquiry.enquiry_date }}</td></tr>
+            {% endfor %}
+            {% for enquiry in follow_ups %}
+            <tr><td>{{ enquiry.name }}</td><td>{{ enquiry.preferred_center.name|default:"-" }}<br><span class="meta">{{ enquiry.assigned_counsellor.name|default:"-" }}</span></td><td>Follow-Up</td><td>{{ enquiry.next_follow_up_date }}</td></tr>
+            {% empty %}
+            <tr><td colspan="4">No enquiry or follow-up on this date.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="table-card">
+        <h3 style="margin-top:0;">Absentees</h3>
+        <table>
+            <tr><th>Student</th><th>Center / Batch</th><th>Remarks</th></tr>
+            {% for record in absentees %}
+            <tr><td>{{ record.student.name }}</td><td>{{ record.student.center.name|default:"-" }}<br><span class="meta">{{ record.student.batch|default:"-" }}</span></td><td>{{ record.remarks|default:"-" }}</td></tr>
+            {% empty %}
+            <tr><td colspan="3">No absentees on this date.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

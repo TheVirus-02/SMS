@@ -3,8 +3,15 @@ from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, TestCase, override_settings
 
-from .models import Course, ExamRegistration, SmsLog, Student, StudentCourse
-from .sms import build_exam_registration_message, normalize_phone_number, send_exam_registration_sms
+from .models import CommunicationLog, Course, Enquiry, ExamRegistration, SmsLog, Student, StudentCourse
+from .sms import (
+    build_enquiry_follow_up_message,
+    build_exam_registration_message,
+    build_fee_reminder_message,
+    normalize_phone_number,
+    send_exam_registration_sms,
+    send_general_sms,
+)
 
 
 class SmsHelperTests(SimpleTestCase):
@@ -48,6 +55,12 @@ class SmsLogTests(TestCase):
             payment_method="cash",
             payment_amount=300,
         )
+        self.enquiry = Enquiry.objects.create(
+            name="Riya",
+            mobile_no="9123456789",
+            enquiry_date=date(2026, 4, 10),
+            next_follow_up_date=date(2026, 4, 26),
+        )
 
     @override_settings(SMS_ENABLED=False, SMS_PROVIDER="twilio", SMS_DEFAULT_COUNTRY_CODE="+91")
     def test_send_exam_registration_sms_creates_skipped_log_when_disabled(self):
@@ -82,3 +95,32 @@ class SmsLogTests(TestCase):
         self.assertEqual(log.status, SmsLog.STATUS_SENT)
         self.assertEqual(log.provider_message_id, "SM123")
         self.assertIn("Python", log.message_body)
+
+    @override_settings(SMS_ENABLED=False, SMS_PROVIDER="twilio", SMS_DEFAULT_COUNTRY_CODE="+91")
+    def test_send_general_sms_creates_communication_log_when_disabled(self):
+        result = send_general_sms(
+            student=self.student,
+            message_body=build_fee_reminder_message(self.student),
+            category=CommunicationLog.CATEGORY_FEE_REMINDER,
+        )
+
+        self.assertFalse(result.sent)
+        self.assertTrue(result.skipped)
+        log = CommunicationLog.objects.get()
+        self.assertEqual(log.status, CommunicationLog.STATUS_SKIPPED)
+        self.assertEqual(log.category, CommunicationLog.CATEGORY_FEE_REMINDER)
+        self.assertEqual(log.phone_number, "+919876543210")
+
+    @override_settings(SMS_ENABLED=False, SMS_PROVIDER="twilio", SMS_DEFAULT_COUNTRY_CODE="+91")
+    def test_send_general_sms_supports_enquiry_logs(self):
+        result = send_general_sms(
+            enquiry=self.enquiry,
+            message_body=build_enquiry_follow_up_message(self.enquiry),
+            category=CommunicationLog.CATEGORY_ENQUIRY_FOLLOW_UP,
+        )
+
+        self.assertFalse(result.sent)
+        self.assertTrue(result.skipped)
+        log = CommunicationLog.objects.get(category=CommunicationLog.CATEGORY_ENQUIRY_FOLLOW_UP)
+        self.assertEqual(log.enquiry, self.enquiry)
+        self.assertEqual(log.phone_number, "+9123456789")

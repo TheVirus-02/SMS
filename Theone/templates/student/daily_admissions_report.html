@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
+    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { background:var(--surface-muted); }
+    .meta { color:var(--text-muted); }
+    .course-list { display:flex; flex-wrap:wrap; gap:6px; }
+    .course-tag { padding:6px 10px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-size:12px; font-weight:600; }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Daily Admissions Report</h2>
+        <p style="margin:0;">Students admitted today with quick access to their records and receipt workflow.</p>
+        <div class="actions-row">
+            <a class="secondary-link" href="{% url 'index' %}">Back to Dashboard</a>
+            <a class="secondary-link" href="{% url 'today_collection_dashboard' %}">Today Collection</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">Admissions<strong>{{ total_students }}</strong></div>
+            <div class="stat-box">Admission Collection<strong>{{ admission_collection_total }}</strong></div>
+        </div>
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="center">Center</label>
+                <select id="center" name="center">
+                    <option value="">All</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}" {% if center_id == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="counsellor">Counsellor</label>
+                <select id="counsellor" name="counsellor">
+                    <option value="">All</option>
+                    {% for counsellor in counsellors %}
+                    <option value="{{ counsellor.id }}" {% if counsellor_id == counsellor.id|stringformat:"s" %}selected{% endif %}>{{ counsellor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="actions-row">
+            <button class="btn" type="submit">Apply Filters</button>
+            <a class="secondary-link" href="{% url 'daily_admissions_report' %}">Clear</a>
+            <a class="secondary-link" href="{% url 'export_daily_admissions_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+        </div>
+    </form>
+
+    <div class="table-card">
+        <table>
+            <tr>
+                <th>Student</th>
+                <th>Courses</th>
+                <th>Center / Trainer</th>
+                <th>Admission Fee</th>
+                <th>Action</th>
+            </tr>
+            {% for student in students %}
+            <tr>
+                <td><a href="{% url 'student_detail' student.id %}"><strong>{{ student.name }}</strong></a><br><span class="meta">{{ student.student_id }}</span><br><span class="meta">{{ student.mobile_no }}</span></td>
+                <td><div class="course-list">{% for course in student.courses.all %}<span class="course-tag">{{ course.name }}</span>{% empty %}<span class="meta">No courses</span>{% endfor %}</div></td>
+                <td>{{ student.center.name|default:"-" }}<br><span class="meta">{{ student.trainer.name|default:"-" }}</span><br><span class="meta">{{ student.counsellor.name|default:"-" }}</span></td>
+                <td><strong>{{ student.paid_fee|default:0 }}</strong></td>
+                <td><a href="{% url 'admission_receipt' student.id %}">Receipt</a> | <a href="{% url 'student_detail' student.id %}">Open</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No student admitted today for the current filters.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

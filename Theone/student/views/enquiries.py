@@ -1,15 +1,17 @@
 from datetime import date
+import csv
 import re
 
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import Batch, Center, Counsellor, Course, Enquiry, Student, Trainer
 
 
-def enquiry_list(request):
+def build_enquiry_list_context(request):
     query = request.GET.get("q", "").strip()
     status_filter = request.GET.get("status", "").strip()
     counsellor_filter = request.GET.get("counsellor", "").strip()
@@ -36,46 +38,100 @@ def enquiry_list(request):
 
     enquiries = list(enquiries)
     today = date.today()
+    return {
+        "enquiries": enquiries,
+        "query": query,
+        "status_filter": status_filter,
+        "counsellor_filter": counsellor_filter,
+        "status_choices": Enquiry.STATUS_CHOICES,
+        "counsellors": Counsellor.objects.all().order_by("name"),
+        "total_enquiries": len(enquiries),
+        "new_count": sum(1 for enquiry in enquiries if enquiry.status == "new"),
+        "follow_up_count": sum(1 for enquiry in enquiries if enquiry.status in {"contacted", "follow_up", "demo_scheduled", "demo_attended", "interested", "ready"}),
+        "admitted_count": sum(1 for enquiry in enquiries if enquiry.status == "admitted"),
+        "today_follow_up_count": sum(1 for enquiry in enquiries if enquiry.next_follow_up_date == today),
+    }
 
-    return render(
-        request,
-        "enquiry/enquiry_list.html",
-        {
-            "enquiries": enquiries,
-            "query": query,
-            "status_filter": status_filter,
-            "counsellor_filter": counsellor_filter,
-            "status_choices": Enquiry.STATUS_CHOICES,
-            "counsellors": Counsellor.objects.all().order_by("name"),
-            "total_enquiries": len(enquiries),
-            "new_count": sum(1 for enquiry in enquiries if enquiry.status == "new"),
-            "follow_up_count": sum(1 for enquiry in enquiries if enquiry.status in {"contacted", "follow_up", "demo_scheduled", "demo_attended", "interested", "ready"}),
-            "admitted_count": sum(1 for enquiry in enquiries if enquiry.status == "admitted"),
-            "today_follow_up_count": sum(1 for enquiry in enquiries if enquiry.next_follow_up_date == today),
-        },
-    )
+
+def write_csv_response(filename, headers, rows):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow(row)
+    return response
+
+
+def enquiry_list(request):
+    return render(request, "enquiry/enquiry_list.html", build_enquiry_list_context(request))
 
 
 def today_follow_up(request):
     today = date.today()
-    enquiries = list(
-        Enquiry.objects.select_related(
-            "interested_course",
-            "preferred_batch",
-            "preferred_center",
-            "assigned_counsellor",
-            "converted_student",
-        ).filter(next_follow_up_date=today).order_by("assigned_counsellor__name", "name")
+    counsellor_filter = request.GET.get("counsellor", "").strip()
+    base_qs = Enquiry.objects.select_related(
+        "interested_course",
+        "preferred_batch",
+        "preferred_center",
+        "assigned_counsellor",
+        "converted_student",
+    ).exclude(status__in=["admitted", "lost"])
+    if counsellor_filter:
+        base_qs = base_qs.filter(assigned_counsellor_id=counsellor_filter)
+
+    today_enquiries = list(
+        base_qs.filter(next_follow_up_date=today).order_by("assigned_counsellor__name", "name")
+    )
+    overdue_enquiries = list(
+        base_qs.filter(next_follow_up_date__lt=today).order_by("next_follow_up_date", "assigned_counsellor__name", "name")
+    )
+    ready_enquiries = list(
+        base_qs.filter(status="ready").order_by("assigned_counsellor__name", "name")
     )
     return render(
         request,
         "enquiry/today_follow_up.html",
         {
-            "enquiries": enquiries,
+            "enquiries": today_enquiries,
+            "overdue_enquiries": overdue_enquiries,
+            "ready_enquiries": ready_enquiries,
             "today": today,
-            "total_enquiries": len(enquiries),
+            "total_enquiries": len(today_enquiries),
+            "overdue_count": len(overdue_enquiries),
+            "ready_count": len(ready_enquiries),
+            "counsellor_filter": counsellor_filter,
+            "counsellors": Counsellor.objects.all().order_by("name"),
         },
     )
+
+
+
+
+def export_enquiries_csv(request):
+    context = build_enquiry_list_context(request)
+    return write_csv_response(
+        "enquiries.csv",
+        ["Name", "Mobile", "Course", "Center", "Batch", "Counsellor", "Source", "Status", "Probability", "Enquiry Date", "Next Follow-up", "Converted Student ID"],
+        [
+            [
+                enquiry.name,
+                enquiry.mobile_no,
+                enquiry.interested_course.name if enquiry.interested_course else "-",
+                enquiry.preferred_center.name if enquiry.preferred_center else "-",
+                str(enquiry.preferred_batch) if enquiry.preferred_batch else "-",
+                enquiry.assigned_counsellor.name if enquiry.assigned_counsellor else "-",
+                enquiry.source or "-",
+                enquiry.get_status_display(),
+                enquiry.get_admission_probability_display(),
+                enquiry.enquiry_date or "-",
+                enquiry.next_follow_up_date or "-",
+                enquiry.converted_student.student_id if enquiry.converted_student else "-",
+            ]
+            for enquiry in context["enquiries"]
+        ],
+    )
+
 
 
 def enquiry_detail(request, id):
@@ -227,6 +283,9 @@ def save_enquiry_form(request, context, enquiry=None):
 
 def build_conversion_context(enquiry, error=None, form_data=None):
     form_data = form_data or {}
+    course_fee = form_data.get("course_fee", enquiry.fee_discussed if enquiry.fee_discussed else "")
+    discount_type = form_data.get("discount_type", "value")
+    discount_value = form_data.get("discount_value", "")
     return {
         "enquiry": enquiry,
         "error": error or [],
@@ -242,7 +301,13 @@ def build_conversion_context(enquiry, error=None, form_data=None):
             "center": form_data.get("center", str(enquiry.preferred_center_id) if enquiry.preferred_center_id else ""),
             "counsellor": form_data.get("counsellor", str(enquiry.assigned_counsellor_id) if enquiry.assigned_counsellor_id else ""),
             "joining_date": form_data.get("joining_date", enquiry.expected_joining_date.isoformat() if enquiry.expected_joining_date else date.today().isoformat()),
-            "course_fee": form_data.get("course_fee", enquiry.fee_discussed if enquiry.fee_discussed else ""),
+            "course_fee": course_fee,
+            "discount_type": discount_type,
+            "discount_value": discount_value,
+            "final_course_fee": form_data.get(
+                "final_course_fee",
+                calculate_discounted_fee(course_fee, discount_type, discount_value),
+            ),
             "paid_fee": form_data.get("paid_fee", ""),
             "reference_source": form_data.get("reference_source", enquiry.source or ""),
             "status": form_data.get("status", "active"),
@@ -259,10 +324,17 @@ def save_enquiry_conversion(request, enquiry, context):
         "counsellor": request.POST.get("counsellor") or None,
         "joining_date": request.POST.get("joining_date") or None,
         "course_fee": request.POST.get("course_fee") or None,
+        "discount_type": request.POST.get("discount_type") or "value",
+        "discount_value": request.POST.get("discount_value") or "",
         "paid_fee": request.POST.get("paid_fee") or None,
         "reference_source": (request.POST.get("reference_source") or "").strip(),
         "status": request.POST.get("status") or "active",
     }
+    form_data["final_course_fee"] = calculate_discounted_fee(
+        form_data["course_fee"],
+        form_data["discount_type"],
+        form_data["discount_value"],
+    )
 
     error = validate_conversion_form(form_data)
     if error:
@@ -291,7 +363,7 @@ def save_enquiry_conversion(request, enquiry, context):
             address=enquiry.address or None,
             joining_date=form_data["joining_date"],
             counsellor_id=form_data["counsellor"],
-            course_fee=form_data["course_fee"] or None,
+            course_fee=form_data["final_course_fee"] or None,
             paid_fee=form_data["paid_fee"] or None,
             trainer_id=form_data["trainer"],
             batch_id=form_data["batch"],
@@ -340,7 +412,72 @@ def validate_conversion_form(form_data):
     for field, error_message in required_fields.items():
         if not form_data.get(field):
             return error_message
+    if form_data.get("discount_type") not in {"value", "percent"}:
+        return "Select a valid discount type."
+    if form_data.get("course_fee") not in (None, ""):
+        try:
+            course_fee = float(form_data["course_fee"])
+        except (TypeError, ValueError):
+            return "Course fee must be a valid number."
+        if course_fee < 0:
+            return "Course fee cannot be negative."
+    else:
+        course_fee = 0
+
+    discount_value = form_data.get("discount_value")
+    if discount_value not in (None, ""):
+        try:
+            discount_number = float(discount_value)
+        except (TypeError, ValueError):
+            return "Discount must be a valid number."
+        if discount_number < 0:
+            return "Discount cannot be negative."
+        if form_data["discount_type"] == "percent" and discount_number > 100:
+            return "Discount percentage cannot be more than 100."
+
+    final_course_fee = form_data.get("final_course_fee")
+    if final_course_fee in (None, ""):
+        final_course_fee = 0
+    try:
+        final_fee_number = float(final_course_fee)
+    except (TypeError, ValueError):
+        return "Final course fee must be a valid number."
+    if final_fee_number < 0:
+        return "Final course fee cannot be negative."
+
+    if form_data.get("paid_fee") not in (None, ""):
+        try:
+            paid_fee = float(form_data["paid_fee"])
+        except (TypeError, ValueError):
+            return "Paid fee must be a valid number."
+        if paid_fee < 0:
+            return "Paid fee cannot be negative."
+        if paid_fee > final_fee_number:
+            return "Paid fee cannot be more than final course fee."
     return None
+
+
+def calculate_discounted_fee(course_fee, discount_type, discount_value):
+    try:
+        base_fee = float(course_fee or 0)
+    except (TypeError, ValueError):
+        return ""
+
+    try:
+        discount_number = float(discount_value or 0)
+    except (TypeError, ValueError):
+        return ""
+
+    if base_fee < 0 or discount_number < 0:
+        return ""
+
+    if discount_type == "percent":
+        discount_amount = (base_fee * discount_number) / 100
+    else:
+        discount_amount = discount_number
+
+    final_fee = max(base_fee - discount_amount, 0)
+    return int(final_fee) if final_fee.is_integer() else round(final_fee, 2)
 
 
 def normalize_enquiry_payload(form_data):

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
+    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { background:var(--surface-muted); }
+    .meta { color:var(--text-muted); }
+</style>
+
+<div class="page-shell">
+    <div class="hero-card">
+        <h2 style="margin:0 0 8px;">Attendance Monthly Summary</h2>
+        <p style="margin:0;">Review present, absent, leave, and attendance percentage for {{ selected_month|date:"F Y" }}.</p>
+        <div class="actions-row">
+            <a class="secondary-link" href="{% url 'attendance_batches' %}">Back to Attendance</a>
+            <a class="secondary-link" href="{% url 'daily_absentees' %}">Daily Absentees</a>
+        </div>
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="filter-grid">
+            <div><label for="month">Month</label><input id="month" type="month" name="month" value="{{ month_value }}"></div>
+            <div><label for="center">Center</label><select id="center" name="center"><option value="">All</option>{% for center in centers %}<option value="{{ center.id }}" {% if center_id == center.id|stringformat:"s" %}selected{% endif %}>{{ center.name }}</option>{% endfor %}</select></div>
+            <div><label for="batch">Batch</label><select id="batch" name="batch"><option value="">All</option>{% for batch in batches %}<option value="{{ batch.id }}" {% if batch_id == batch.id|stringformat:"s" %}selected{% endif %}>{{ batch }}</option>{% endfor %}</select></div>
+        </div>
+        <div class="actions-row"><button class="btn" type="submit">Apply Filters</button><a class="secondary-link" href="{% url 'attendance_monthly_summary' %}">Clear</a></div>
+    </form>
+
+    <div class="table-card">
+        <div class="meta" style="margin-bottom:14px;">Total Students: {{ total_students }}</div>
+        <table>
+            <tr><th>Student</th><th>Center / Batch</th><th>Present</th><th>Absent</th><th>Leave</th><th>Total Marked</th><th>Attendance %</th></tr>
+            {% for row in summary_rows %}
+            <tr>
+                <td><a href="{% url 'student_detail' row.student.id %}"><strong>{{ row.student.name }}</strong></a><br><span class="meta">{{ row.student.student_id }}</span></td>
+                <td>{{ row.student.center.name|default:"-" }}<br><span class="meta">{{ row.student.batch|default:"-" }}</span></td>
+                <td>{{ row.present }}</td>
+                <td>{{ row.absent }}</td>
+                <td>{{ row.leave }}</td>
+                <td>{{ row.total_marked }}</td>
+                <td><strong>{{ row.attendance_percentage }}%</strong></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">No attendance summary available for the selected filter.</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}

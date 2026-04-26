@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load static %}
+
 
 {% block content %}
 <style>
@@ -11,10 +13,8 @@
 
     .dashboard-card,
     .dashboard-panel {
-        background: #ffffff;
         border-radius: 14px;
         padding: 18px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     }
 
     .dashboard-card h4,
@@ -25,7 +25,7 @@
     .dashboard-value {
         font-size: 30px;
         font-weight: bold;
-        color: #0f4c81;
+        color: var(--brand-red);
         margin: 6px 0;
     }
 
@@ -35,31 +35,50 @@
         gap: 20px;
     }
 
-    .quick-links {
+    .alert-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .alert-box {
+        border: 1px solid var(--border-strong);
+        border-left: 5px solid var(--brand-red);
+        border-radius: 14px;
+        padding: 16px;
+        background: #fff;
+    }
+
+    .alert-box strong {
+        display: block;
+        font-size: 28px;
+        margin: 6px 0;
+        color: var(--brand-red);
+    }
+
+    .quick-links,
+    .action-grid {
         display: grid;
         gap: 10px;
     }
 
-    .quick-links a {
+    .action-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .quick-links a,
+    .action-grid a {
         display: block;
         padding: 12px 14px;
-        background: #0f4c81;
-        color: #ffffff;
         text-decoration: none;
         border-radius: 10px;
+        text-align: center;
     }
 
-    .quick-links a:hover {
-        background: #0c3d67;
-    }
-
-    .recent-list {
-        margin: 0;
-        padding-left: 18px;
-    }
-
-    .recent-list li {
-        margin-bottom: 10px;
+    .quick-links a:hover,
+    .action-grid a:hover {
+        transform: translateY(-2px);
     }
 
     .attendance-strip {
@@ -70,11 +89,9 @@
     }
 
     .attendance-box {
-        background: #ffffff;
         border-radius: 12px;
         padding: 16px;
         text-align: center;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     }
 
     .attendance-box strong {
@@ -83,16 +100,247 @@
         margin-top: 6px;
     }
 
+    .table-card {
+        margin-top: 24px;
+        overflow-x: auto;
+    }
+
+    .search-form {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr auto auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group select {
+        font-size: 14px;
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .table-link {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        border: none;
+        font-size: 14px;
+    }
+
+    .dashboard-table {
+        margin-top: 14px;
+    }
+
+    .dashboard-table th,
+    .dashboard-table td {
+        padding: 12px 14px;
+        vertical-align: top;
+    }
+
+    .dashboard-table thead th {
+        background: var(--brand-black);
+        color: var(--brand-white);
+    }
+
+    .amount-cell {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .muted-text {
+        color: var(--text-muted);
+        margin-top: 10px;
+    }
+
+    .brand-banner {
+        margin-top: 0;
+        padding: 12px;
+        overflow: hidden;
+        animation: bannerReveal 0.9s ease-out both;
+    }
+
+    .brand-banner img {
+        display: block;
+        width: 100%;
+        max-width: 980px;
+        margin: 0 auto;
+        border-radius: 12px;
+        background: #ffffff;
+        object-fit: contain;
+    }
+
+    @keyframes bannerReveal {
+        from {
+            opacity: 0;
+            transform: translateY(18px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
     @media (max-width: 768px) {
         .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .search-form {
             grid-template-columns: 1fr;
         }
     }
 </style>
 
-<div class="dashboard-panel" style="margin-bottom: 20px; background: linear-gradient(135deg, #0f4c81, #3aa6b9); color: white;">
-    <h2 style="margin: 0;">Student Management Dashboard</h2>
-    <p style="margin: 8px 0 0;">Track students, trainers, attendance, and center logistics from one place.</p>
+<div class="dashboard-panel" style="margin-bottom: 20px; background: linear-gradient(135deg, var(--brand-black), #2a2a2a 55%, var(--brand-red)); color: white; border: 1px solid rgba(255,255,255,0.08);">
+    <h2 style="margin: 0; color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,0.25);">Student Management Dashboard</h2>
+    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.82);">Track students, fees, attendance, enquiries, and center activity from one branded workspace.</p>
+</div>
+
+<div class="dashboard-panel brand-banner">
+    <img src="{% static 'images/matrix-dashboard-banner.png' %}" alt="Matrix Computer Education">
+</div>
+
+<div class="dashboard-panel table-card" style="margin-top: 0;">
+    <h4>Quick Actions</h4>
+    <div class="action-grid">
+        <a href="{% url 'student_registration' %}">New Student Registration</a>
+        <a href="{% url 'add_enquiry' %}">Add Enquiry</a>
+        <a href="{% url 'today_collection_dashboard' %}">Today Collection</a>
+        <a href="{% url 'daily_admissions_report' %}">Daily Admissions</a>
+        <a href="{% url 'pending_fee_list' %}">Pending Fee List</a>
+        <a href="{% url 'today_follow_up' %}">Today Follow-Up</a>
+        <a href="{% url 'daily_absentees' %}">Daily Absentees</a>
+        <a href="{% url 'attendance_monthly_summary' %}">Attendance Summary</a>
+        <a href="{% url 'reporting_dashboard' %}">Reports and Exports</a>
+        <a href="{% url 'reminder_center' %}">Reminder Center</a>
+        <a href="{% url 'staff_center_analytics' %}">Staff / Center Analytics</a>
+        <a href="{% url 'communication_log_list' %}">Communication Logs</a>
+        <a href="{% url 'daily_summary' %}">Daily Summary</a>
+        <a href="{% url 'record' %}">View Records</a>
+        <a href="{% url 'trainer_list' %}">Manage Trainers</a>
+        <a href="{% url 'attendance_batches' %}">Mark Attendance</a>
+    </div>
+</div>
+
+<div class="dashboard-panel table-card">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div>
+            <h4 style="margin:0 0 6px;">Automation Alerts</h4>
+            <div class="muted-text" style="margin:0;">High-priority reminders and stale follow-up items.</div>
+        </div>
+        <a href="{% url 'reminder_center' %}" class="btn-secondary">Open Reminder Center</a>
+    </div>
+    <div class="alert-grid" style="margin-top:16px;">
+        <div class="alert-box">
+            Overdue Fee Cases
+            <strong>{{ overdue_fee_alert_count }}</strong>
+            <div>Older pending fee records needing contact</div>
+        </div>
+        <div class="alert-box">
+            Today Follow-Ups
+            <strong>{{ today_follow_up_count }}</strong>
+            <div>Enquiries to contact today</div>
+        </div>
+        <div class="alert-box">
+            Overdue Follow-Ups
+            <strong>{{ overdue_follow_up_alert_count }}</strong>
+            <div>Enquiries missed beyond follow-up date</div>
+        </div>
+        <div class="alert-box">
+            Stale Enquiries
+            <strong>{{ stale_enquiry_alert_count }}</strong>
+            <div>Enquiries untouched for 7+ days</div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-panel table-card">
+    <h4>Search Students By Name And Course</h4>
+    <form method="get" class="search-form">
+        <div class="form-group">
+            <label for="name">Student Name</label>
+            <input type="text" id="name" name="name" value="{{ name_query }}" placeholder="Enter student name">
+        </div>
+        <div class="form-group">
+            <label for="course">Course</label>
+            <select id="course" name="course">
+                <option value="">All Courses</option>
+                {% for course in courses %}
+                <option value="{{ course.id }}" {% if course_query == course.id|stringformat:"s" %}selected{% endif %}>
+                    {{ course.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="table-actions">
+            <button type="submit" class="btn-primary">Search</button>
+        </div>
+        <div class="table-actions">
+            <a href="{% url 'index' %}" class="btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    {% if has_search_filters %}
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Total Fee</th>
+                    <th>Interest Paid</th>
+                    <th>Pending Fee</th>
+                    <th>Courses</th>
+                    <th>Add Installment</th>
+                    <th>Exam Register</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in search_results %}
+                <tr>
+                    <td>
+                        <a href="{% url 'student_detail' student.id %}">{{ student.name }}</a>
+                    </td>
+                    <td class="amount-cell">{{ student.course_fee|default:0 }}</td>
+                    <td class="amount-cell">{{ student.total_paid }}</td>
+                    <td class="amount-cell">{{ student.remaining_fee }}</td>
+                    <td>
+                        {% for course in student.courses.all %}
+                            {{ course.name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            No courses
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{% url 'add_installment' student.id %}" class="table-link">Add Installment</a>
+                    </td>
+                    <td>
+                        <a href="{% url 'register_exam' student.id %}" class="table-link">Register Exam</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">No students found for the selected search.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="muted-text">Search results: {{ search_results|length }}</p>
+    {% else %}
+        <p class="muted-text">Use the filters above to search students and view fee details in table format.</p>
+    {% endif %}
 </div>
 
 <div class="dashboard-grid">
@@ -107,9 +355,24 @@
         <div>Currently active batches</div>
     </div>
     <div class="dashboard-card">
-        <h4>Pending Fees</h4>
-        <div class="dashboard-value">{{ pending_fees }}</div>
+        <h4>Today's Admissions</h4>
+        <div class="dashboard-value">{{ today_admissions }}</div>
+        <div>Total admission done today</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Today's Collection</h4>
+        <div class="dashboard-value">{{ today_collection_total }}</div>
+        <div>Admission + installment collection</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Pending Fee Students</h4>
+        <div class="dashboard-value">{{ pending_fee_students_count }}</div>
         <div>Students with dues left</div>
+    </div>
+    <div class="dashboard-card">
+        <h4>Today's Follow-Up</h4>
+        <div class="dashboard-value">{{ today_follow_up_count }}</div>
+        <div>Enquiries to contact today</div>
     </div>
     <div class="dashboard-card">
         <h4>Trainers</h4>
@@ -144,32 +407,62 @@
     </div>
 </div>
 
-<div class="dashboard-layout">
-    <div class="dashboard-panel">
-        <h4>Recent Students</h4>
-        {% if recent_students %}
-        <ol class="recent-list">
-            {% for student in recent_students %}
-            <li>
-                <a href="{% url 'student_detail' student.id %}">{{ student.name }}</a>
-                <div>{{ student.student_id }} | {{ student.status|title }}</div>
-            </li>
+<div class="dashboard-panel table-card">
+    <h4>Center Wise Fee And Admission Details</h4>
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Fee</th>
+                {% for center in fee_summary_centers %}
+                <th>{{ center.name }}</th>
+                {% endfor %}
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in fee_summary_rows %}
+            <tr>
+                <td><strong>{{ row.label }}</strong></td>
+                {% for value in row.values %}
+                <td class="amount-cell">{{ value }}</td>
+                {% endfor %}
+                <td class="amount-cell">{{ row.total }}</td>
+            </tr>
             {% endfor %}
-        </ol>
-        {% else %}
-        <p>No students have been added yet.</p>
-        {% endif %}
-    </div>
+        </tbody>
+    </table>
+</div>
 
-    <div class="dashboard-panel">
-        <h4>Quick Actions</h4>
-        <div class="quick-links">
-            <a href="{% url 'student_registration' %}">Add Student</a>
-            <a href="{% url 'record' %}">View Records</a>
-            <a href="{% url 'trainer_list' %}">Manage Trainers</a>
-            <a href="{% url 'attendance_batches' %}">Mark Attendance</a>
-            <a href="{% url 'logistics_dashboard' %}">Update Logistics</a>
-        </div>
+<div class="dashboard-panel table-card">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <h4 style="margin:0;">Recent Communication Logs</h4>
+        <a href="{% url 'communication_log_list' %}" class="btn-secondary">View All Logs</a>
     </div>
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Recipient</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in recent_communication_logs %}
+            <tr>
+                <td>{{ log.created_at|date:"d M Y H:i" }}</td>
+                <td>{{ log.recipient_name }}</td>
+                <td>{{ log.get_category_display }}</td>
+                <td>{{ log.get_status_display }}</td>
+                <td>{{ log.response_detail|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No communication log available yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

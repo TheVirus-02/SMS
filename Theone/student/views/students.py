@@ -1,10 +1,11 @@
 import calendar
+import csv
 from datetime import date
 import re
 
 from django.contrib import messages
-from django.db.models import Prefetch, Q
-from django.http import JsonResponse
+from django.db.models import Prefetch, Q, Sum
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import (
@@ -21,6 +22,157 @@ from student.models import (
     StudentCourse,
     Trainer,
 )
+
+
+def serialize_student_courses(student):
+    return ", ".join(course.name for course in student.courses.all()) or "-"
+
+
+def parse_report_date(raw_value):
+    if not raw_value:
+        return None
+    try:
+        return date.fromisoformat(raw_value)
+    except ValueError:
+        return None
+
+
+def build_student_record_context(request):
+    students_qs = Student.objects.select_related(
+        "counsellor", "trainer", "batch", "center"
+    ).prefetch_related("courses")
+    query = request.GET.get("q", "").strip()
+    payment_filter = request.GET.get("payment_status", "").strip()
+    student_status = request.GET.get("student_status", "").strip()
+    trainer_id = request.GET.get("trainer", "").strip()
+    center_id = request.GET.get("center", "").strip()
+    counsellor_id = request.GET.get("counsellor", "").strip()
+    batch_id = request.GET.get("batch", "").strip()
+    sort_by = request.GET.get("sort", "").strip() or "newest"
+
+    if query:
+        students_qs = students_qs.filter(
+            Q(student_id__icontains=query)
+            | Q(name__icontains=query)
+            | Q(mobile_no__icontains=query)
+            | Q(guardian_mobile__icontains=query)
+            | Q(counsellor__name__icontains=query)
+            | Q(trainer__name__icontains=query)
+            | Q(center__name__icontains=query)
+            | Q(courses__name__icontains=query)
+        ).distinct()
+    if student_status:
+        students_qs = students_qs.filter(status=student_status)
+    if trainer_id:
+        students_qs = students_qs.filter(trainer_id=trainer_id)
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+    if counsellor_id:
+        students_qs = students_qs.filter(counsellor_id=counsellor_id)
+    if batch_id:
+        students_qs = students_qs.filter(batch_id=batch_id)
+
+    students = list(students_qs)
+    if payment_filter == "Paid":
+        students = [student for student in students if student.remaining_fee == 0 and student.course_fee]
+    elif payment_filter == "Pending":
+        students = [student for student in students if student.total_paid == 0]
+    elif payment_filter == "Partial":
+        students = [
+            student for student in students if 0 < student.remaining_fee < (student.course_fee or 0)
+        ]
+
+    if sort_by == "name":
+        students.sort(key=lambda student: (student.name or "").lower())
+    elif sort_by == "pending_fee":
+        students.sort(key=lambda student: (student.remaining_fee, (student.name or "").lower()), reverse=True)
+    elif sort_by == "total_paid":
+        students.sort(key=lambda student: (student.total_paid, (student.name or "").lower()), reverse=True)
+    else:
+        students.sort(key=lambda student: (student.joining_date or date.min, student.name or ""), reverse=True)
+
+    return {
+        "students": students,
+        "query": query,
+        "payment_filter": payment_filter,
+        "student_status": student_status,
+        "trainer_id": trainer_id,
+        "center_id": center_id,
+        "counsellor_id": counsellor_id,
+        "batch_id": batch_id,
+        "sort_by": sort_by,
+        "trainers": Trainer.objects.all(),
+        "centers": Center.objects.all(),
+        "counsellors": Counsellor.objects.select_related("center").all(),
+        "batches": Batch.objects.all().order_by("time"),
+        "status_choices": Student.STATUS_CHOICES,
+        "total_records": len(students),
+        "paid_count": sum(1 for student in students if student.payment_status == "Paid"),
+        "partial_count": sum(1 for student in students if student.payment_status == "Partial"),
+        "pending_count": sum(1 for student in students if student.payment_status == "Pending"),
+        "pending_fee_total": sum(student.remaining_fee for student in students),
+    }
+
+
+def build_pending_fee_context(request):
+    query = request.GET.get("q", "").strip()
+    center_id = request.GET.get("center", "").strip()
+    trainer_id = request.GET.get("trainer", "").strip()
+    counsellor_id = request.GET.get("counsellor", "").strip()
+    pending_type = request.GET.get("pending_type", "").strip()
+
+    students_qs = Student.objects.select_related(
+        "center", "trainer", "counsellor", "batch"
+    ).prefetch_related("courses")
+
+    if query:
+        students_qs = students_qs.filter(
+            Q(student_id__icontains=query)
+            | Q(name__icontains=query)
+            | Q(mobile_no__icontains=query)
+            | Q(courses__name__icontains=query)
+            | Q(center__name__icontains=query)
+        ).distinct()
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+    if trainer_id:
+        students_qs = students_qs.filter(trainer_id=trainer_id)
+    if counsellor_id:
+        students_qs = students_qs.filter(counsellor_id=counsellor_id)
+
+    students = [student for student in students_qs if student.remaining_fee > 0]
+    if pending_type == "no_payment":
+        students = [student for student in students if student.total_paid == 0]
+    elif pending_type == "partial":
+        students = [student for student in students if student.total_paid > 0]
+
+    students.sort(key=lambda student: (student.remaining_fee, (student.name or "").lower()), reverse=True)
+
+    return {
+        "students": students,
+        "query": query,
+        "center_id": center_id,
+        "trainer_id": trainer_id,
+        "counsellor_id": counsellor_id,
+        "pending_type": pending_type,
+        "centers": Center.objects.all().order_by("name"),
+        "trainers": Trainer.objects.all().order_by("name"),
+        "counsellors": Counsellor.objects.select_related("center").all(),
+        "total_students": len(students),
+        "pending_fee_total": sum(student.remaining_fee for student in students),
+        "full_pending_count": sum(1 for student in students if student.total_paid == 0),
+        "partial_pending_count": sum(1 for student in students if student.total_paid > 0),
+    }
+
+
+def write_csv_response(filename, headers, rows):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    for row in rows:
+        writer.writerow(row)
+    return response
 
 
 def student_registration(request):
@@ -66,62 +218,7 @@ def student_registration(request):
 
 
 def record(request):
-    students_qs = Student.objects.select_related(
-        "counsellor", "trainer", "batch", "center"
-    ).prefetch_related("courses")
-    query = request.GET.get("q", "").strip()
-    payment_filter = request.GET.get("payment_status", "").strip()
-    student_status = request.GET.get("student_status", "").strip()
-    trainer_id = request.GET.get("trainer", "").strip()
-    center_id = request.GET.get("center", "").strip()
-
-    if query:
-        students_qs = students_qs.filter(
-            Q(student_id__icontains=query)
-            | Q(name__icontains=query)
-            | Q(mobile_no__icontains=query)
-            | Q(guardian_mobile__icontains=query)
-            | Q(counsellor__name__icontains=query)
-            | Q(trainer__name__icontains=query)
-            | Q(center__name__icontains=query)
-            | Q(courses__name__icontains=query)
-        ).distinct()
-    if student_status:
-        students_qs = students_qs.filter(status=student_status)
-    if trainer_id:
-        students_qs = students_qs.filter(trainer_id=trainer_id)
-    if center_id:
-        students_qs = students_qs.filter(center_id=center_id)
-
-    students = list(students_qs)
-    if payment_filter == "Paid":
-        students = [student for student in students if student.remaining_fee == 0 and student.course_fee]
-    elif payment_filter == "Pending":
-        students = [student for student in students if student.total_paid == 0]
-    elif payment_filter == "Partial":
-        students = [
-            student for student in students if 0 < student.remaining_fee < (student.course_fee or 0)
-        ]
-
-    return render(
-        request,
-        "student/record.html",
-        {
-            "students": students,
-            "query": query,
-            "payment_filter": payment_filter,
-            "student_status": student_status,
-            "trainer_id": trainer_id,
-            "center_id": center_id,
-            "trainers": Trainer.objects.all(),
-            "centers": Center.objects.all(),
-            "status_choices": Student.STATUS_CHOICES,
-            "total_records": len(students),
-            "paid_count": sum(1 for student in students if student.payment_status == "Paid"),
-            "partial_count": sum(1 for student in students if student.payment_status == "Partial"),
-            "pending_count": sum(1 for student in students if student.payment_status == "Pending"),
-        },
-    )
+    return render(request, "student/record.html", build_student_record_context(request))
 
 
 def student_detail(request, id):
@@ -267,6 +364,475 @@ def add_installment(request, student_id):
             "student": student,
             "next_installment_no": next_installment_no,
             "payment_mode_choices": Installment.PAYMENT_MODE_CHOICES,
+            "installment": None,
+            "form_mode": "add",
+            "show_student_nav": True,
+        },
+    )
+
+
+def edit_installment(request, installment_id):
+    installment = get_object_or_404(Installment, id=installment_id)
+    student = installment.student
+
+    if request.method == "POST":
+        installment.installment_date = request.POST.get("installment_date")
+        installment.amount = request.POST.get("amount")
+        installment.payment_mode = request.POST.get("payment_mode") or "cash"
+        installment.transaction_id = request.POST.get("transaction_id")
+        installment.remarks = request.POST.get("remarks")
+        installment.save()
+        messages.success(request, "Installment updated successfully.")
+        return redirect("student_detail", id=student.id)
+
+    return render(
+        request,
+        "installment/installment_add.html",
+        {
+            "student": student,
+            "next_installment_no": installment.installment_no,
+            "payment_mode_choices": Installment.PAYMENT_MODE_CHOICES,
+            "installment": installment,
+            "form_mode": "edit",
+            "show_student_nav": True,
+        },
+    )
+
+
+def delete_installment(request, installment_id):
+    installment = get_object_or_404(Installment, id=installment_id)
+    student_id = installment.student_id
+    if request.method == "POST":
+        installment.delete()
+        messages.success(request, "Installment deleted successfully.")
+    return redirect("student_detail", id=student_id)
+
+
+def today_collection_dashboard(request):
+    today = date.today()
+    center_id = request.GET.get("center", "").strip()
+
+    admission_students_qs = Student.objects.select_related("center").prefetch_related("courses").filter(
+        joining_date=today,
+        paid_fee__gt=0,
+    )
+    installments_qs = Installment.objects.select_related("student__center").prefetch_related("student__courses").filter(
+        installment_date=today
+    )
+
+    if center_id:
+        admission_students_qs = admission_students_qs.filter(center_id=center_id)
+        installments_qs = installments_qs.filter(student__center_id=center_id)
+
+    collection_rows = []
+    for student in admission_students_qs.order_by("name"):
+        collection_rows.append(
+            {
+                "kind": "Admission",
+                "student": student,
+                "receipt_kind": "admission",
+                "center_name": student.center.name if student.center else "-",
+                "courses": ", ".join(course.name for course in student.courses.all()) or "-",
+                "amount": student.paid_fee or 0,
+                "payment_mode": "Admission",
+                "reference": "-",
+                "remarks": "Admission paid fee",
+            }
+        )
+
+    for installment in installments_qs.order_by("-installment_no", "student__name"):
+        collection_rows.append(
+            {
+                "kind": f"Installment {installment.installment_no}",
+                "student": installment.student,
+                "receipt_kind": "installment",
+                "installment_id": installment.id,
+                "center_name": installment.student.center.name if installment.student.center else "-",
+                "courses": ", ".join(course.name for course in installment.student.courses.all()) or "-",
+                "amount": installment.amount or 0,
+                "payment_mode": installment.get_payment_mode_display(),
+                "reference": installment.transaction_id or "-",
+                "remarks": installment.remarks or "-",
+            }
+        )
+
+    collection_rows.sort(key=lambda row: ((row["student"].name or "").lower(), row["kind"]))
+
+    center_totals = {}
+    for row in collection_rows:
+        center_totals[row["center_name"]] = center_totals.get(row["center_name"], 0) + row["amount"]
+
+    return render(
+        request,
+        "student/today_collection_dashboard.html",
+        {
+            "today": today,
+            "collection_rows": collection_rows,
+            "total_collection": sum(row["amount"] for row in collection_rows),
+            "admission_collection_total": sum(student.paid_fee or 0 for student in admission_students_qs),
+            "installment_collection_total": installments_qs.aggregate(total=Sum("amount"))["total"] or 0,
+            "collection_count": len(collection_rows),
+            "center_totals": sorted(center_totals.items()),
+            "center_id": center_id,
+            "centers": Center.objects.all().order_by("name"),
+        },
+    )
+
+
+def pending_fee_list(request):
+    return render(request, "student/pending_fee_list.html", build_pending_fee_context(request))
+
+
+def daily_admissions_report(request):
+    today = date.today()
+    center_id = request.GET.get("center", "").strip()
+    counsellor_id = request.GET.get("counsellor", "").strip()
+
+    students_qs = Student.objects.select_related(
+        "center", "trainer", "counsellor", "batch"
+    ).prefetch_related("courses").filter(joining_date=today)
+
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+    if counsellor_id:
+        students_qs = students_qs.filter(counsellor_id=counsellor_id)
+
+    students = list(students_qs.order_by("name"))
+
+    return render(
+        request,
+        "student/daily_admissions_report.html",
+        {
+            "today": today,
+            "students": students,
+            "center_id": center_id,
+            "counsellor_id": counsellor_id,
+            "centers": Center.objects.all().order_by("name"),
+            "counsellors": Counsellor.objects.select_related("center").all(),
+            "total_students": len(students),
+            "admission_collection_total": sum(student.paid_fee or 0 for student in students),
+        },
+    )
+
+
+def reporting_dashboard(request):
+    today = date.today()
+    date_from_value = request.GET.get("date_from", "").strip()
+    date_to_value = request.GET.get("date_to", "").strip()
+    center_id = request.GET.get("center", "").strip()
+    course_id = request.GET.get("course", "").strip()
+    counsellor_id = request.GET.get("counsellor", "").strip()
+    trainer_id = request.GET.get("trainer", "").strip()
+
+    date_from = parse_report_date(date_from_value) or today.replace(day=1)
+    date_to = parse_report_date(date_to_value) or today
+    if date_from > date_to:
+        date_from, date_to = date_to, date_from
+
+    students_qs = Student.objects.select_related(
+        "center", "trainer", "counsellor", "batch"
+    ).prefetch_related("courses").filter(joining_date__range=(date_from, date_to))
+    enquiries_qs = Enquiry.objects.select_related(
+        "preferred_center", "interested_course", "assigned_counsellor"
+    ).filter(enquiry_date__range=(date_from, date_to))
+    converted_enquiries_qs = Enquiry.objects.select_related(
+        "preferred_center", "interested_course", "assigned_counsellor"
+    ).filter(converted_at__range=(date_from, date_to))
+    installments_qs = Installment.objects.select_related(
+        "student__center", "student__trainer", "student__counsellor"
+    ).prefetch_related("student__courses").filter(installment_date__range=(date_from, date_to))
+
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+        enquiries_qs = enquiries_qs.filter(preferred_center_id=center_id)
+        converted_enquiries_qs = converted_enquiries_qs.filter(preferred_center_id=center_id)
+        installments_qs = installments_qs.filter(student__center_id=center_id)
+    if course_id:
+        students_qs = students_qs.filter(courses__id=course_id).distinct()
+        enquiries_qs = enquiries_qs.filter(interested_course_id=course_id)
+        converted_enquiries_qs = converted_enquiries_qs.filter(interested_course_id=course_id)
+        installments_qs = installments_qs.filter(student__courses__id=course_id).distinct()
+    if counsellor_id:
+        students_qs = students_qs.filter(counsellor_id=counsellor_id)
+        enquiries_qs = enquiries_qs.filter(assigned_counsellor_id=counsellor_id)
+        converted_enquiries_qs = converted_enquiries_qs.filter(assigned_counsellor_id=counsellor_id)
+        installments_qs = installments_qs.filter(student__counsellor_id=counsellor_id)
+    if trainer_id:
+        students_qs = students_qs.filter(trainer_id=trainer_id)
+        installments_qs = installments_qs.filter(student__trainer_id=trainer_id)
+
+    students = list(students_qs)
+    enquiries = list(enquiries_qs)
+    converted_enquiries = list(converted_enquiries_qs)
+    installments = list(installments_qs)
+
+    student_ids = {student.id for student in students}
+    center_rows = []
+    for center in Center.objects.order_by("name"):
+        center_students = [student for student in students if student.center_id == center.id]
+        center_enquiries = [enquiry for enquiry in enquiries if enquiry.preferred_center_id == center.id]
+        center_conversions = [enquiry for enquiry in converted_enquiries if enquiry.preferred_center_id == center.id]
+        center_installments = [installment for installment in installments if installment.student.center_id == center.id]
+        admission_collection = sum(student.paid_fee or 0 for student in center_students)
+        installment_collection = sum(installment.amount or 0 for installment in center_installments)
+        if center_students or center_enquiries or center_installments or center_conversions:
+            center_rows.append(
+                {
+                    "name": center.name,
+                    "admissions": len(center_students),
+                    "enquiries": len(center_enquiries),
+                    "conversions": len(center_conversions),
+                    "collection": admission_collection + installment_collection,
+                    "pending_fee": sum(student.remaining_fee for student in center_students),
+                }
+            )
+
+    course_rows = []
+    for course in Course.objects.order_by("name"):
+        course_students = [student for student in students if any(student_course.id == course.id for student_course in student.courses.all())]
+        course_student_ids = {student.id for student in course_students}
+        course_enquiries = [enquiry for enquiry in enquiries if enquiry.interested_course_id == course.id]
+        course_conversions = [enquiry for enquiry in converted_enquiries if enquiry.interested_course_id == course.id]
+        course_installments = [installment for installment in installments if installment.student_id in course_student_ids]
+        if course_students or course_enquiries or course_installments or course_conversions:
+            course_rows.append(
+                {
+                    "name": course.name,
+                    "students": len(course_students),
+                    "enquiries": len(course_enquiries),
+                    "conversions": len(course_conversions),
+                    "collection": sum(student.paid_fee or 0 for student in course_students) + sum(installment.amount or 0 for installment in course_installments),
+                    "pending_fee": sum(student.remaining_fee for student in course_students),
+                }
+            )
+
+    trainer_rows = []
+    for trainer in Trainer.objects.order_by("name"):
+        trainer_students = [student for student in students if student.trainer_id == trainer.id]
+        trainer_installments = [installment for installment in installments if installment.student.trainer_id == trainer.id]
+        if trainer_students or trainer_installments:
+            trainer_rows.append(
+                {
+                    "name": trainer.name,
+                    "students": len(trainer_students),
+                    "active_students": sum(1 for student in trainer_students if student.status == "active"),
+                    "collection": sum(student.paid_fee or 0 for student in trainer_students) + sum(installment.amount or 0 for installment in trainer_installments),
+                    "pending_fee": sum(student.remaining_fee for student in trainer_students),
+                }
+            )
+
+    counsellor_rows = []
+    for counsellor in Counsellor.objects.select_related("center").all():
+        counsellor_students = [student for student in students if student.counsellor_id == counsellor.id]
+        counsellor_enquiries = [enquiry for enquiry in enquiries if enquiry.assigned_counsellor_id == counsellor.id]
+        counsellor_conversions = [enquiry for enquiry in converted_enquiries if enquiry.assigned_counsellor_id == counsellor.id]
+        if counsellor_students or counsellor_enquiries or counsellor_conversions:
+            counsellor_rows.append(
+                {
+                    "name": counsellor.name,
+                    "center_name": counsellor.center.name if counsellor.center else "-",
+                    "enquiries": len(counsellor_enquiries),
+                    "admissions": len(counsellor_students),
+                    "conversions": len(counsellor_conversions),
+                    "collection": sum(student.paid_fee or 0 for student in counsellor_students),
+                }
+            )
+
+    context = {
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "center_id": center_id,
+        "course_id": course_id,
+        "counsellor_id": counsellor_id,
+        "trainer_id": trainer_id,
+        "centers": Center.objects.order_by("name"),
+        "courses": Course.objects.order_by("name"),
+        "counsellors": Counsellor.objects.select_related("center").all(),
+        "trainers": Trainer.objects.order_by("name"),
+        "total_admissions": len(students),
+        "total_enquiries": len(enquiries),
+        "total_conversions": len(converted_enquiries),
+        "admission_collection_total": sum(student.paid_fee or 0 for student in students),
+        "installment_collection_total": sum(installment.amount or 0 for installment in installments),
+        "pending_fee_total": sum(student.remaining_fee for student in students),
+        "center_rows": center_rows,
+        "course_rows": course_rows,
+        "trainer_rows": trainer_rows,
+        "counsellor_rows": counsellor_rows,
+    }
+    context["total_collection"] = context["admission_collection_total"] + context["installment_collection_total"]
+    context["conversion_rate"] = round((context["total_conversions"] / context["total_enquiries"]) * 100, 2) if context["total_enquiries"] else 0
+    return render(request, "student/reporting_dashboard.html", context)
+
+
+def export_student_records_csv(request):
+    context = build_student_record_context(request)
+    return write_csv_response(
+        "student-records.csv",
+        ["Student ID", "Student Name", "Mobile", "Center", "Trainer", "Counsellor", "Batch", "Courses", "Status", "Total Fee", "Total Paid", "Pending Fee", "Payment Status", "Joining Date"],
+        [
+            [
+                student.student_id,
+                student.name,
+                student.mobile_no,
+                student.center.name if student.center else "-",
+                student.trainer.name if student.trainer else "-",
+                student.counsellor.name if student.counsellor else "-",
+                str(student.batch) if student.batch else "-",
+                serialize_student_courses(student),
+                student.get_status_display(),
+                student.course_fee or 0,
+                student.total_paid,
+                student.remaining_fee,
+                student.payment_status,
+                student.joining_date or "-",
+            ]
+            for student in context["students"]
+        ],
+    )
+
+
+def export_pending_fees_csv(request):
+    context = build_pending_fee_context(request)
+    return write_csv_response(
+        "pending-fee-list.csv",
+        ["Student ID", "Student Name", "Mobile", "Center", "Trainer", "Counsellor", "Courses", "Total Fee", "Paid", "Pending Fee", "Payment Status"],
+        [
+            [
+                student.student_id,
+                student.name,
+                student.mobile_no,
+                student.center.name if student.center else "-",
+                student.trainer.name if student.trainer else "-",
+                student.counsellor.name if student.counsellor else "-",
+                serialize_student_courses(student),
+                student.course_fee or 0,
+                student.total_paid,
+                student.remaining_fee,
+                student.payment_status,
+            ]
+            for student in context["students"]
+        ],
+    )
+
+
+def export_today_collection_csv(request):
+    today = date.today()
+    center_id = request.GET.get("center", "").strip()
+
+    admission_students_qs = Student.objects.select_related("center").prefetch_related("courses").filter(
+        joining_date=today,
+        paid_fee__gt=0,
+    )
+    installments_qs = Installment.objects.select_related("student__center").prefetch_related("student__courses").filter(
+        installment_date=today
+    )
+    if center_id:
+        admission_students_qs = admission_students_qs.filter(center_id=center_id)
+        installments_qs = installments_qs.filter(student__center_id=center_id)
+
+    rows = []
+    for student in admission_students_qs.order_by("name"):
+        rows.append(
+            [
+                "Admission",
+                student.student_id,
+                student.name,
+                student.center.name if student.center else "-",
+                serialize_student_courses(student),
+                student.paid_fee or 0,
+                "Admission",
+                "-",
+                "Admission paid fee",
+            ]
+        )
+    for installment in installments_qs.order_by("-installment_no", "student__name"):
+        rows.append(
+            [
+                f"Installment {installment.installment_no}",
+                installment.student.student_id,
+                installment.student.name,
+                installment.student.center.name if installment.student.center else "-",
+                serialize_student_courses(installment.student),
+                installment.amount or 0,
+                installment.get_payment_mode_display(),
+                installment.transaction_id or "-",
+                installment.remarks or "-",
+            ]
+        )
+    return write_csv_response(
+        "today-collection-report.csv",
+        ["Type", "Student ID", "Student Name", "Center", "Courses", "Amount", "Payment Mode", "Reference", "Remarks"],
+        rows,
+    )
+
+
+def export_daily_admissions_csv(request):
+    today = date.today()
+    center_id = request.GET.get("center", "").strip()
+    counsellor_id = request.GET.get("counsellor", "").strip()
+
+    students_qs = Student.objects.select_related(
+        "center", "trainer", "counsellor", "batch"
+    ).prefetch_related("courses").filter(joining_date=today)
+    if center_id:
+        students_qs = students_qs.filter(center_id=center_id)
+    if counsellor_id:
+        students_qs = students_qs.filter(counsellor_id=counsellor_id)
+
+    students = list(students_qs.order_by("name"))
+    return write_csv_response(
+        "daily-admissions-report.csv",
+        ["Student ID", "Student Name", "Mobile", "Center", "Trainer", "Counsellor", "Batch", "Courses", "Admission Fee", "Total Fee", "Joining Date"],
+        [
+            [
+                student.student_id,
+                student.name,
+                student.mobile_no,
+                student.center.name if student.center else "-",
+                student.trainer.name if student.trainer else "-",
+                student.counsellor.name if student.counsellor else "-",
+                str(student.batch) if student.batch else "-",
+                serialize_student_courses(student),
+                student.paid_fee or 0,
+                student.course_fee or 0,
+                student.joining_date or "-",
+            ]
+            for student in students
+        ],
+    )
+
+
+def admission_receipt(request, student_id):
+    student = get_object_or_404(
+        Student.objects.select_related("center", "trainer", "counsellor", "batch").prefetch_related("courses"),
+        id=student_id,
+    )
+    return render(
+        request,
+        "student/admission_receipt.html",
+        {
+            "student": student,
+            "receipt_date": student.joining_date or date.today(),
+            "receipt_amount": student.paid_fee or 0,
+            "show_student_nav": True,
+        },
+    )
+
+
+def installment_receipt(request, installment_id):
+    installment = get_object_or_404(
+        Installment.objects.select_related("student__center", "student__trainer", "student__counsellor", "student__batch").prefetch_related("student__courses"),
+        id=installment_id,
+    )
+    return render(
+        request,
+        "installment/installment_receipt.html",
+        {
+            "installment": installment,
+            "student": installment.student,
+            "receipt_date": installment.installment_date,
+            "receipt_amount": installment.amount,
             "show_student_nav": True,
         },
     )

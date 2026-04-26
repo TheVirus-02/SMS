@@ -4,18 +4,18 @@
 <style>
     .page-shell { display:grid; gap:20px; }
     .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
     .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
     .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:#17324d; color:#fff; }
-    .secondary-link { background:#eef2f7; color:#17324d; }
+    .btn { background:var(--brand-black); color:#fff; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
     .danger-link { background:#fff0f0; color:#b23a3a; }
     .trainer-tags { display:flex; flex-wrap:wrap; gap:8px; }
-    .trainer-tag { background:#eef6fb; color:#0f4c81; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
+    .trainer-tag { background:var(--surface-muted); color:var(--brand-red); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
     table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
-    th { background:#f5f8fb; }
-    .meta { color:#617384; }
+    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { background:var(--surface-muted); }
+    .meta { color:var(--text-muted); }
 </style>
 
 <div class="page-shell">
@@ -83,3 +83,5 @@
     </div>
 </div>
 {% endblock %}
+
+

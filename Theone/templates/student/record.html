@@ -17,7 +17,7 @@
     }
 
     .hero-card {
-        background: linear-gradient(135deg, #17324d, #2f7f8f);
+        background: linear-gradient(135deg, var(--brand-black), var(--brand-red));
         color: #fff;
     }
 
@@ -59,7 +59,7 @@
 
     .field-group label {
         font-weight: 600;
-        color: #17324d;
+        color: var(--brand-black);
     }
 
     .field-group input,
@@ -67,19 +67,21 @@
         width: 100%;
         box-sizing: border-box;
         padding: 11px 12px;
-        border: 1px solid #cfd8e3;
+        border: 1px solid var(--border);
         border-radius: 10px;
-        background: #f9fbfd;
+        background: #fff8f8;
     }
 
     .actions-row {
         display: flex;
         gap: 12px;
         margin-top: 18px;
+        flex-wrap: wrap;
     }
 
     .action-btn,
-    .clear-link {
+    .clear-link,
+    .mini-action {
         display: inline-block;
         padding: 12px 18px;
         border-radius: 12px;
@@ -89,14 +91,22 @@
 
     .action-btn {
         border: 0;
-        background: #17324d;
+        background: var(--brand-black);
         color: #fff;
         cursor: pointer;
     }
 
     .clear-link {
-        background: #eef2f7;
-        color: #17324d;
+        background: var(--surface-muted);
+        color: var(--brand-black);
+    }
+
+    .mini-action {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        background: var(--surface-muted);
+        color: var(--brand-black);
+        font-size: 12px;
     }
 
     .table-wrap {
@@ -111,18 +121,18 @@
     th,
     td {
         padding: 12px 14px;
-        border-bottom: 1px solid #e6ebf1;
+        border-bottom: 1px solid var(--border);
         text-align: left;
         vertical-align: top;
     }
 
     th {
-        background: #f5f8fb;
-        color: #17324d;
+        background: var(--surface-muted);
+        color: var(--brand-black);
     }
 
     .student-link {
-        color: #17324d;
+        color: var(--brand-black);
         font-weight: 700;
         text-decoration: none;
     }
@@ -136,8 +146,8 @@
     .course-tag {
         padding: 6px 10px;
         border-radius: 999px;
-        background: #eef6fb;
-        color: #0f4c81;
+        background: var(--surface-muted);
+        color: var(--brand-red);
         font-size: 12px;
         font-weight: 600;
     }
@@ -167,12 +177,17 @@
     }
 
     .meta-text {
-        color: #647487;
+        color: var(--text-muted);
         font-size: 13px;
     }
 
+    .fee-status {
+        font-weight: 700;
+        color: var(--brand-red);
+    }
+
     .empty-state {
-        color: #647487;
+        color: var(--text-muted);
         margin: 0;
     }
 
@@ -203,6 +218,10 @@
             <div class="stat-box">
                 Pending
                 <strong>{{ pending_count }}</strong>
+            </div>
+            <div class="stat-box">
+                Pending Fee Total
+                <strong>{{ pending_fee_total }}</strong>
             </div>
         </div>
     </div>
@@ -254,11 +273,42 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div class="field-group">
+                <label for="counsellor">Counsellor</label>
+                <select id="counsellor" name="counsellor">
+                    <option value="">All</option>
+                    {% for counsellor in counsellors %}
+                    <option value="{{ counsellor.id }}" {% if counsellor_id == counsellor.id|stringformat:"s" %}selected{% endif %}>{{ counsellor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="batch">Batch</label>
+                <select id="batch" name="batch">
+                    <option value="">All</option>
+                    {% for batch in batches %}
+                    <option value="{{ batch.id }}" {% if batch_id == batch.id|stringformat:"s" %}selected{% endif %}>{{ batch }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="sort">Sort By</label>
+                <select id="sort" name="sort">
+                    <option value="newest" {% if sort_by == "newest" %}selected{% endif %}>Newest Joining</option>
+                    <option value="name" {% if sort_by == "name" %}selected{% endif %}>Name</option>
+                    <option value="pending_fee" {% if sort_by == "pending_fee" %}selected{% endif %}>Highest Pending Fee</option>
+                    <option value="total_paid" {% if sort_by == "total_paid" %}selected{% endif %}>Highest Paid</option>
+                </select>
+            </div>
         </div>
 
         <div class="actions-row">
             <button class="action-btn" type="submit">Apply Filters</button>
             <a class="clear-link" href="{% url 'record' %}">Clear Filters</a>
+            <a class="clear-link" href="{% url 'export_student_records_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
         </div>
     </form>
 
@@ -271,6 +321,7 @@
                     <th>Trainer / Center</th>
                     <th>Fee Snapshot</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
                 {% for student in students %}
                 <tr>
@@ -296,7 +347,7 @@
                     <td>
                         <div><strong>Total:</strong> {{ student.course_fee|default:0 }}</div>
                         <div><strong>Paid:</strong> {{ student.total_paid }}</div>
-                        <div><strong>Remaining:</strong> {{ student.remaining_fee }}</div>
+                        <div class="fee-status"><strong>Remaining:</strong> {{ student.remaining_fee }}</div>
                     </td>
                     <td>
                         <div>
@@ -306,10 +357,18 @@
                         </div>
                         <div class="meta-text" style="margin-top: 8px;">{{ student.get_status_display }}</div>
                     </td>
+                    <td>
+                        <div class="actions-row" style="margin-top:0;">
+                            <a class="mini-action" href="{% url 'student_detail' student.id %}">View</a>
+                            <a class="mini-action" href="{% url 'update_student' student.id %}">Edit</a>
+                            <a class="mini-action" href="{% url 'add_installment' student.id %}">Installment</a>
+                            <a class="mini-action" href="{% url 'register_exam' student.id %}">Exam</a>
+                        </div>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5"><p class="empty-state">No student records matched the current filters.</p></td>
+                    <td colspan="6"><p class="empty-state">No student records matched the current filters.</p></td>
                 </tr>
                 {% endfor %}
             </table>
@@ -317,3 +376,4 @@
     </div>
 </div>
 {% endblock %}
+

@@ -517,3 +517,64 @@ class SmsLog(models.Model):
     def __str__(self):
         exam_label = self.exam_registration.course_name if self.exam_registration_id else "General"
         return f"{self.student.name} - {exam_label} - {self.status}"
+
+
+class CommunicationLog(models.Model):
+    CHANNEL_SMS = "sms"
+    CHANNEL_SYSTEM = "system"
+
+    STATUS_SENT = "sent"
+    STATUS_FAILED = "failed"
+    STATUS_SKIPPED = "skipped"
+
+    CATEGORY_FEE_REMINDER = "fee_reminder"
+    CATEGORY_ENQUIRY_FOLLOW_UP = "enquiry_follow_up"
+    CATEGORY_DAILY_SUMMARY = "daily_summary"
+    CATEGORY_GENERAL = "general"
+
+    CHANNEL_CHOICES = [
+        (CHANNEL_SMS, "SMS"),
+        (CHANNEL_SYSTEM, "System"),
+    ]
+    STATUS_CHOICES = [
+        (STATUS_SENT, "Sent"),
+        (STATUS_FAILED, "Failed"),
+        (STATUS_SKIPPED, "Skipped"),
+    ]
+    CATEGORY_CHOICES = [
+        (CATEGORY_FEE_REMINDER, "Fee Reminder"),
+        (CATEGORY_ENQUIRY_FOLLOW_UP, "Enquiry Follow-up"),
+        (CATEGORY_DAILY_SUMMARY, "Daily Summary"),
+        (CATEGORY_GENERAL, "General"),
+    ]
+
+    student = models.ForeignKey(
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="communication_logs",
+        null=True,
+        blank=True,
+    )
+    enquiry = models.ForeignKey(
+        "Enquiry",
+        on_delete=models.CASCADE,
+        related_name="communication_logs",
+        null=True,
+        blank=True,
+    )
+    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES, default=CHANNEL_SMS)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default=CATEGORY_GENERAL)
+    recipient_name = models.CharField(max_length=120)
+    phone_number = models.CharField(max_length=30, blank=True)
+    message_body = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    provider = models.CharField(max_length=30, default="twilio")
+    provider_message_id = models.CharField(max_length=100, null=True, blank=True)
+    response_detail = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.recipient_name} - {self.get_category_display()} - {self.status}"

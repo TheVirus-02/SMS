@@ -4,6 +4,7 @@ from student import views
 
 urlpatterns = [
     path("enquiries/", views.enquiry_list, name="enquiry_list"),
+    path("enquiries/export/", views.export_enquiries_csv, name="export_enquiries_csv"),
     path("enquiries/today-follow-up/", views.today_follow_up, name="today_follow_up"),
     path("enquiries/add/", views.add_enquiry, name="add_enquiry"),
     path("enquiries/<int:id>/", views.enquiry_detail, name="enquiry_detail"),

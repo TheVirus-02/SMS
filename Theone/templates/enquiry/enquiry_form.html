@@ -4,20 +4,20 @@
 <style>
     .form-shell { max-width:1100px; margin:0 auto; display:grid; gap:20px; }
     .hero-card, .form-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
     .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
     .field-group { display:grid; gap:6px; }
     .field-group.full { grid-column:1 / -1; }
-    label { font-weight:600; color:#17324d; }
-    input, select, textarea { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    label { font-weight:600; color:var(--brand-black); }
+    input, select, textarea { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
     textarea { min-height:96px; resize:vertical; }
     .error-box, .info-box { padding:14px 16px; border-radius:14px; }
     .error-box { background:#fff0f0; color:#b23a3a; }
-    .info-box { background:#eef6fb; color:#17324d; }
+    .info-box { background:var(--surface-muted); color:var(--brand-black); }
     .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
     .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
-    .btn { background:#17324d; color:#fff; }
-    .secondary-link { background:#eef2f7; color:#17324d; }
+    .btn { background:var(--brand-black); color:#fff; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
     @media (max-width:900px) { .form-grid { grid-template-columns:1fr; } }
 </style>
 
@@ -46,10 +46,10 @@
             <div class="field-group"><label for="guardian_mobile">Guardian Mobile</label><input id="guardian_mobile" name="guardian_mobile" type="text" value="{{ form_data.guardian_mobile }}"></div>
             <div class="field-group"><label for="age">Age</label><input id="age" name="age" type="number" value="{{ form_data.age }}"></div>
             <div class="field-group"><label for="qualification">Qualification / Class</label><input id="qualification" name="qualification" type="text" value="{{ form_data.qualification }}"></div>
-            <div class="field-group"><label for="source">Enquiry Source</label><input id="source" name="source" type="text" value="{{ form_data.source }}" placeholder="Walk-in, reference, social media"></div>
-            <div class="field-group"><label for="enquiry_date">Enquiry Date</label><input id="enquiry_date" name="enquiry_date" type="date" value="{{ form_data.enquiry_date }}"></div>
+            <div class="field-group"><label for="source">Enquiry Source</label><input id="source" name="source" type="text" value="{{ form_data.source }}" placeholder="Walk-in, reference, social media" required></div>
+            <div class="field-group"><label for="enquiry_date">Enquiry Date</label><input id="enquiry_date" name="enquiry_date" type="date" value="{{ form_data.enquiry_date }}" required></div>
             <div class="field-group"><label for="expected_joining_date">Expected Joining Date</label><input id="expected_joining_date" name="expected_joining_date" type="date" value="{{ form_data.expected_joining_date }}"></div>
-            <div class="field-group full"><label for="address">Address</label><textarea id="address" name="address">{{ form_data.address }}</textarea></div>
+            <div class="field-group full"><label for="address">Address</label><textarea id="address" name="address" required>{{ form_data.address }}</textarea></div>
         </div>
 
         <h3 style="margin-top:24px;">Course Interest</h3>
@@ -63,7 +63,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="field-group"><label for="fee_discussed">Fee Discussed</label><input id="fee_discussed" name="fee_discussed" type="number" min="0" value="{{ form_data.fee_discussed }}"></div>
+            <div class="field-group"><label for="fee_discussed">Fee Suggested</label><input id="fee_discussed" name="fee_discussed" type="number" min="0" value="{{ form_data.fee_discussed }}"></div>
             <div class="field-group">
                 <label for="preferred_center">Preferred Center</label>
                 <select id="preferred_center" name="preferred_center">
@@ -132,3 +132,4 @@
     </form>
 </div>
 {% endblock %}
+
