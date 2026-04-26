@@ -3,38 +3,35 @@
 {% block content %}
 <style>
     .page-shell { display:grid; gap:20px; }
-    .hero-card, .toolbar-card, .batch-card, .message-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
-    .message-card { background:#eef6fb; border-left:4px solid #17324d; }
+    .hero-card, .toolbar-card, .table-card, .message-card { padding:22px; }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .message-card { background:var(--surface-muted); border-left:4px solid var(--brand-black); }
     .toolbar-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto auto; gap:12px; align-items:end; }
-    .batch-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px; }
-    .batch-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-    .meta-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
-    .meta-pill, .tag { background:#eef6fb; color:#17324d; border-radius:999px; padding:7px 12px; font-size:13px; font-weight:700; }
-    .assignment-list { display:grid; gap:10px; margin-top:18px; }
-    .assignment-item { border:1px solid #dce6ef; border-radius:14px; padding:12px 14px; background:#fbfdff; }
+    .meta-pill, .tag { background:var(--surface-muted); color:var(--brand-black); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:700; }
     .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
     .section-head { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
-    .toggle-btn { background:#eef5fb; color:#17324d; border:1px solid #cfe1ef; border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; transition:background 0.2s ease, color 0.2s ease, transform 0.2s ease; }
-    .toggle-btn:hover { background:#dfeef8; transform:translateY(-1px); }
-    .toggle-btn.is-open { background:#17324d; color:#fff; border-color:#17324d; }
+    .toggle-btn { background:var(--surface-muted); color:var(--brand-black); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-weight:700; cursor:pointer; transition:background 0.2s ease, color 0.2s ease, transform 0.2s ease; }
+    .toggle-btn:hover { background:var(--brand-red-soft); transform:translateY(-1px); }
+    .toggle-btn.is-open { background:var(--brand-black); color:#fff; border-color:var(--brand-black); }
     .collapsible { overflow:hidden; max-height:0; opacity:0; transition:max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease; margin-top:0; }
     .collapsible.is-open { opacity:1; margin-top:18px; }
-    .grid-wrap { overflow:auto; border:1px solid #dce6ef; border-radius:16px; }
+    .grid-wrap { overflow:auto; border:1px solid var(--border); border-radius:16px; }
     .grid-table { min-width:900px; width:100%; border-collapse:collapse; }
-    .grid-table th, .grid-table td { padding:14px; border-bottom:1px solid #e6ebf1; border-right:1px solid #eef2f6; text-align:left; vertical-align:top; }
-    .grid-table th { background:#f5f8fb; white-space:nowrap; }
-    .grid-time { min-width:130px; font-weight:700; color:#17324d; }
+    .grid-table th, .grid-table td { padding:14px; border-bottom:1px solid var(--border); border-right:1px solid var(--surface-muted); text-align:left; vertical-align:top; }
+    .grid-table th { background:var(--surface-muted); white-space:nowrap; }
+    .grid-time { min-width:130px; font-weight:700; color:var(--brand-black); }
     .grid-cell { min-width:210px; background:#fff; }
     .grid-stack { display:grid; gap:8px; }
-    .grid-entry { background:#fbfdff; border:1px solid #dce6ef; border-radius:12px; padding:10px 12px; }
-    .grid-entry a { color:#17324d; text-decoration:none; font-weight:700; }
-    .grid-empty { color:#7a8898; font-style:italic; }
+    .grid-entry { background:var(--surface-muted); border:1px solid var(--border); border-radius:12px; padding:10px 12px; }
+    .grid-entry a { color:var(--brand-black); text-decoration:none; font-weight:700; }
+    .grid-empty { color:var(--text-muted); font-style:italic; }
+    .table-wrap { overflow-x:auto; }
+    .dashboard-table { min-width:980px; }
     .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
-    .btn { background:#17324d; color:#fff; }
-    .secondary-link { background:#eef2f7; color:#17324d; }
+    .btn { background:var(--brand-black); color:#fff; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
     .danger-link { background:#fff0f0; color:#b23a3a; }
-    input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
+    input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
     @media (max-width:900px) { .toolbar-grid { grid-template-columns:1fr; } }
 </style>
 
@@ -60,7 +57,7 @@
     <form method="GET" class="toolbar-card">
         <div class="toolbar-grid">
             <div>
-                <label for="q" style="display:block;font-weight:600;margin-bottom:6px;color:#17324d;">Search Batch, Trainer, Center</label>
+                <label for="q" style="display:block;font-weight:600;margin-bottom:6px;color:var(--brand-black);">Search Batch, Trainer, Center</label>
                 <input id="q" name="q" type="text" value="{{ query }}" placeholder="Search by name, time, trainer, or center">
             </div>
             <button class="btn" type="submit">Search</button>
@@ -75,7 +72,7 @@
         <div class="section-head">
             <div>
                 <h3 style="margin:0;">Grid View</h3>
-                <div style="color:#617384;margin-top:6px;">See batch time in rows and centers in columns for quick planning.</div>
+                <div style="color:var(--text-muted);margin-top:6px;">See batch time in rows and centers in columns for quick planning.</div>
             </div>
             <button class="toggle-btn" type="button" data-target="batch-grid-panel">Open Grid View</button>
         </div>
@@ -92,8 +89,8 @@
                     {% for row in grid_rows %}
                     <tr>
                         <td class="grid-time">
-                            <div><a href="{% url 'batch_detail' row.batch.id %}" style="color:#17324d;text-decoration:none;">{{ row.batch }}</a></div>
-                            <div style="margin-top:6px;color:#617384;">{{ row.student_count }} Student{{ row.student_count|pluralize }}</div>
+                            <div><a href="{% url 'batch_detail' row.batch.id %}" style="color:var(--brand-black);text-decoration:none;">{{ row.batch }}</a></div>
+                            <div style="margin-top:6px;color:var(--text-muted);">{{ row.student_count }} Student{{ row.student_count|pluralize }}</div>
                         </td>
                         {% for cell in row.cells %}
                         <td class="grid-cell">
@@ -101,7 +98,7 @@
                                 {% for schedule in cell.schedules %}
                                 <div class="grid-entry">
                                     <a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a>
-                                    <div style="margin-top:4px;color:#617384;">{{ cell.center.name }}</div>
+                                    <div style="margin-top:4px;color:var(--text-muted);">{{ cell.center.name }}</div>
                                 </div>
                                 {% empty %}
                                 <div class="grid-empty">Empty</div>
@@ -120,46 +117,58 @@
         </div>
     </div>
 
-    <div class="batch-grid">
-        {% for batch in batches %}
-        <div class="batch-card">
-            <div class="batch-head">
-                <div>
-                    <h3 style="margin:0 0 6px;"><a href="{% url 'batch_detail' batch.id %}" style="text-decoration:none;color:#17324d;">{{ batch }}</a></h3>
-                    <div style="color:#617384;">Batch Time: {{ batch.time|time:"h:i A" }}</div>
-                </div>
-                <div class="meta-pill">{{ batch.schedule_count }} Allocation{{ batch.schedule_count|pluralize }}</div>
-            </div>
-
-            <div class="meta-row">
-                <span class="meta-pill">{{ batch.student_count }} Student{{ batch.student_count|pluralize }}</span>
-                {% if batch.name %}
-                <span class="meta-pill">{{ batch.name }}</span>
-                {% endif %}
-            </div>
-
-            <div class="assignment-list">
-                {% for schedule in batch.trainerschedule_set.all %}
-                <div class="assignment-item">
-                    <strong>{{ schedule.center.name|default:"Center Pending" }}</strong>
-                    <div style="margin-top:6px;">Trainer: {{ schedule.trainer.name }}</div>
-                </div>
-                {% empty %}
-                <div class="assignment-item">No trainer-center allocation added yet.</div>
-                {% endfor %}
-            </div>
-
-            <div class="action-row">
-                <a class="btn" href="{% url 'batch_detail' batch.id %}">Open</a>
-                <a class="secondary-link" href="{% url 'update_batch' batch.id %}">Edit Batch</a>
-                <a class="danger-link" href="{% url 'delete_batch' batch.id %}" onclick="return confirm('Delete this batch?')">Delete</a>
-            </div>
+    <div class="table-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <h3 style="margin:0;">All Batches</h3>
+            <div class="meta-pill">{{ total_batches }} Batch{{ total_batches|pluralize }}</div>
         </div>
-        {% empty %}
-        <div class="batch-card">
-            <p style="margin:0;">No batch found for the current search.</p>
+        <div class="table-wrap">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Batch</th>
+                        <th>Students</th>
+                        <th>Allocations</th>
+                        <th>Centers / Trainers</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for batch in batches %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'batch_detail' batch.id %}" style="text-decoration:none;color:var(--brand-black);"><strong>{{ batch }}</strong></a><br>
+                            <span style="color:var(--text-muted);">Batch Time: {{ batch.time|time:"h:i A" }}</span>
+                            {% if batch.name %}
+                            <div style="margin-top:8px;"><span class="meta-pill">{{ batch.name }}</span></div>
+                            {% endif %}
+                        </td>
+                        <td>{{ batch.student_count }}</td>
+                        <td>{{ batch.schedule_count }}</td>
+                        <td>
+                            {% for schedule in batch.trainerschedule_set.all %}
+                            <div style="margin-bottom:8px;">
+                                <strong>{{ schedule.center.name|default:"Center Pending" }}</strong><br>
+                                <span style="color:var(--text-muted);">Trainer: {{ schedule.trainer.name }}</span>
+                            </div>
+                            {% empty %}
+                            <span style="color:var(--text-muted);">No trainer-center allocation added yet.</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{% url 'batch_detail' batch.id %}">Open</a> |
+                            <a href="{% url 'update_batch' batch.id %}">Edit</a> |
+                            <a href="{% url 'delete_batch' batch.id %}" onclick="return confirm('Delete this batch?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">No batch found for the current search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        {% endfor %}
     </div>
 </div>
 
@@ -198,3 +207,5 @@
     });
 </script>
 {% endblock %}
+
+

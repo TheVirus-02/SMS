@@ -3,21 +3,19 @@
 {% block content %}
 <style>
     .page-shell { display:grid; gap:20px; }
-    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .hero-card, .filter-card, .table-card { padding:22px; }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
     .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
     .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:#17324d; color:#fff; border:0; cursor:pointer; }
-    .secondary-link { background:#eef2f7; color:#17324d; }
+    .btn { background:var(--brand-black); color:#fff; border:0; cursor:pointer; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
     .search-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:12px; align-items:end; }
-    label { display:block; font-weight:600; margin-bottom:6px; color:#17324d; }
-    input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #cfd8e3; border-radius:10px; background:#f9fbfd; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
-    th { background:#f5f8fb; }
-    .meta { color:#617384; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:var(--brand-black); }
+    input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
+    .table-wrap { overflow-x:auto; }
+    .meta { color:var(--text-muted); }
     .trainer-tags { display:flex; flex-wrap:wrap; gap:8px; }
-    .trainer-tag { background:#eef6fb; color:#0f4c81; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
+    .trainer-tag { background:var(--surface-muted); color:var(--brand-red); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
     @media (max-width:800px) { .search-grid { grid-template-columns:1fr; } }
 </style>
 
@@ -55,40 +53,48 @@
             <h3 style="margin:0;">All Courses</h3>
             <div class="meta">Total Courses: {{ total_courses }}</div>
         </div>
-        <table>
-            <tr>
-                <th>Course</th>
-                <th>Description</th>
-                <th>Trainers</th>
-                <th>Students</th>
-                <th>Action</th>
-            </tr>
-            {% for course in courses %}
-            <tr>
-                <td><a href="{% url 'course_detail' course.id %}"><strong>{{ course.name }}</strong></a></td>
-                <td>{{ course.description|default:"-"|truncatechars:90 }}</td>
-                <td>
-                    <div class="trainer-tags">
-                        {% for trainer in course.trainer_set.all %}
-                        <span class="trainer-tag">{{ trainer.name }}</span>
-                        {% empty %}
-                        <span class="meta">No trainers assigned</span>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td>{{ course.student_count }}</td>
-                <td>
-                    <a href="{% url 'course_detail' course.id %}">Open</a> |
-                    <a href="{% url 'update_course' course.id %}">Edit</a> |
-                    <a href="{% url 'delete_course' course.id %}" onclick="return confirm('Delete this course?')">Delete</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No course matched the current search.</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="table-wrap">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Description</th>
+                        <th>Trainers</th>
+                        <th>Students</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td><a href="{% url 'course_detail' course.id %}"><strong>{{ course.name }}</strong></a></td>
+                        <td>{{ course.description|default:"-"|truncatechars:90 }}</td>
+                        <td>
+                            <div class="trainer-tags">
+                                {% for trainer in course.trainer_set.all %}
+                                <span class="trainer-tag">{{ trainer.name }}</span>
+                                {% empty %}
+                                <span class="meta">No trainers assigned</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td>{{ course.student_count }}</td>
+                        <td>
+                            <a href="{% url 'course_detail' course.id %}">Open</a> |
+                            <a href="{% url 'update_course' course.id %}">Edit</a> |
+                            <a href="{% url 'delete_course' course.id %}" onclick="return confirm('Delete this course?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">No course matched the current search.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
+
+

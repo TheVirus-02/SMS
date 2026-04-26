@@ -2,14 +2,8 @@
 
 {% block content %}
 <style>
-    .card {
-        background: #fff;
-        border-radius: 16px;
-        padding: 22px;
-        box-shadow: 0 10px 28px rgba(18, 39, 63, 0.08);
-        margin-bottom: 20px;
-    }
-
+    .page-shell { display:grid; gap:20px; }
+    .card { padding:22px; }
     .toolbar {
         display: flex;
         gap: 12px;
@@ -26,13 +20,13 @@
     input,
     select {
         padding: 10px 12px;
-        border: 1px solid #d8e0ea;
+        border: 1px solid var(--border);
         border-radius: 10px;
         min-width: 220px;
     }
 
     .btn {
-        background: #17324d;
+        background: var(--brand-black);
         color: #fff;
         border: 0;
         border-radius: 10px;
@@ -41,34 +35,24 @@
         cursor: pointer;
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th,
-    td {
-        padding: 12px 14px;
-        border-bottom: 1px solid #e6ebf1;
-        text-align: left;
-    }
-
-    th {
-        background: #f5f8fb;
-    }
-
     .muted {
-        color: #617384;
+        color: var(--text-muted);
     }
 
     .pill {
         display: inline-block;
         padding: 4px 10px;
         border-radius: 999px;
-        background: #eef5fb;
-        color: #1c5788;
+        background: var(--surface-muted);
+        color: var(--brand-red);
         font-size: 12px;
         font-weight: 700;
+    }
+
+    .hero-card .pill {
+        background: rgba(255, 255, 255, 0.94);
+        color: var(--brand-black);
+        border: 1px solid rgba(17, 17, 17, 0.08);
     }
 
     .summary-grid {
@@ -79,8 +63,8 @@
     }
 
     .summary-box {
-        background: linear-gradient(135deg, #f8fcff, #eef7fb);
-        border: 1px solid #dcebf5;
+        background: linear-gradient(135deg, var(--surface-muted), #eef7fb);
+        border: 1px solid var(--border);
         border-radius: 14px;
         padding: 18px;
     }
@@ -92,7 +76,7 @@
     .summary-value {
         font-size: 30px;
         font-weight: 700;
-        color: #17324d;
+        color: var(--brand-black);
         margin: 6px 0;
     }
 
@@ -111,7 +95,7 @@
     .mini-table th,
     .mini-table td {
         padding: 10px 0;
-        border-bottom: 1px solid #e6ebf1;
+        border-bottom: 1px solid var(--border);
     }
 
     .mini-table th:last-child,
@@ -126,9 +110,9 @@
     }
 
     .chip {
-        background: #f2f8fc;
-        border: 1px solid #d6e8f5;
-        color: #1c5788;
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+        color: var(--brand-red);
         border-radius: 999px;
         padding: 8px 12px;
         font-size: 13px;
@@ -152,9 +136,9 @@
     }
 
     .toggle-btn {
-        background: #eef5fb;
-        color: #17324d;
-        border: 1px solid #cfe1ef;
+        background: var(--surface-muted);
+        color: var(--brand-black);
+        border: 1px solid var(--border);
         border-radius: 10px;
         padding: 10px 14px;
         font-weight: 700;
@@ -163,14 +147,14 @@
     }
 
     .toggle-btn:hover {
-        background: #dfeef8;
+        background: var(--brand-red-soft);
         transform: translateY(-1px);
     }
 
     .toggle-btn.is-open {
-        background: #17324d;
+        background: var(--brand-black);
         color: #fff;
-        border-color: #17324d;
+        border-color: var(--brand-black);
     }
 
     .collapsible {
@@ -186,6 +170,10 @@
         margin-top: 18px;
     }
 
+    .table-wrap {
+        overflow-x: auto;
+    }
+
     @media (max-width: 768px) {
         .summary-layout {
             grid-template-columns: 1fr;
@@ -193,15 +181,16 @@
     }
 </style>
 
+<div class="page-shell">
 {% if messages %}
     {% for message in messages %}
         <div class="card">{{ message }}</div>
     {% endfor %}
 {% endif %}
 
-<div class="card">
+<div class="card hero-card">
     <h2 style="margin-top: 0;">Exam Window</h2>
-    <form method="GET" class="toolbar">
+    <form method="GET" class="toolbar" style="margin-top:18px;">
         <div>
             <label for="exam_date">Exam Date</label>
             <input id="exam_date" type="date" name="exam_date" value="{{ selected_date }}">
@@ -212,12 +201,12 @@
         </div>
         <button class="btn" type="submit">Show Students</button>
         {% if selected_date or search_query %}
-            <a href="{% url 'exam_dashboard' %}" class="muted" style="text-decoration: none; padding-bottom: 12px;">Clear filter</a>
+            <a href="{% url 'exam_dashboard' %}" class="muted" style="text-decoration: none; padding-bottom: 12px; color:rgba(255,255,255,0.82);">Clear filter</a>
         {% endif %}
     </form>
 
     {% if available_dates %}
-        <p class="muted" style="margin-top: 14px;">Registered exam dates:
+        <p class="muted" style="margin-top: 14px; color:rgba(255,255,255,0.82);">Registered exam dates:
             {% for exam_date in available_dates %}
                 <span class="pill">{{ exam_date }}</span>
             {% endfor %}
@@ -323,55 +312,62 @@
         {% endif %}
     </h3>
 
-    <table>
-        <tr>
-            <th>Student</th>
-            <th>Course</th>
-            <th>Receipt</th>
-            <th>Issued By</th>
-            <th>Payment</th>
-            <th>SMS</th>
-            <th>Theory</th>
-            <th>Practical</th>
-            <th>Calculated</th>
-            <th>Total</th>
-            <th>Action</th>
-        </tr>
-        {% for reg in registrations %}
-            <tr>
-                <td>
-                    <a href="{% url 'student_detail' reg.student.id %}">{{ reg.student_name }}</a><br>
-                    <span class="muted">{{ reg.student.student_id }}</span>
-                </td>
-                <td>{{ reg.course_name }}</td>
-                <td>{{ reg.receipt_no }}<br><span class="muted">{{ reg.exam_date }}</span></td>
-                <td>{{ reg.receipt_issued_by.name|default:"-" }}</td>
-                <td>
-                    {{ reg.get_payment_method_display }}<br>
-                    <span class="muted">{{ reg.payment_amount }}</span>
-                </td>
-                <td>
-                    {% with sms_log=reg.latest_sms_log %}
-                        {% if sms_log %}
-                            {{ sms_log.get_status_display }}<br>
-                            <span class="muted">{{ sms_log.created_at|date:"d M Y H:i" }}</span>
-                        {% else %}
-                            -
-                        {% endif %}
-                    {% endwith %}
-                </td>
-                <td>{{ reg.exam_marks|default:"-" }}</td>
-                <td>{{ reg.practical_marks|default:"-" }}</td>
-                <td>{{ reg.calculated_marks|default:"-" }}</td>
-                <td>{{ reg.total_marks|default:"-" }}</td>
-                <td><a href="{% url 'enter_marks' reg.id %}">Update Marks</a></td>
-            </tr>
-        {% empty %}
-            <tr>
-                <td colspan="11">No exam registrations found for this view.</td>
-            </tr>
-        {% endfor %}
-    </table>
+    <div class="table-wrap">
+        <table class="dashboard-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Course</th>
+                    <th>Receipt</th>
+                    <th>Issued By</th>
+                    <th>Payment</th>
+                    <th>SMS</th>
+                    <th>Theory</th>
+                    <th>Practical</th>
+                    <th>Calculated</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registrations %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'student_detail' reg.student.id %}">{{ reg.student_name }}</a><br>
+                            <span class="muted">{{ reg.student.student_id }}</span>
+                        </td>
+                        <td>{{ reg.course_name }}</td>
+                        <td>{{ reg.receipt_no }}<br><span class="muted">{{ reg.exam_date }}</span></td>
+                        <td>{{ reg.receipt_issued_by.name|default:"-" }}</td>
+                        <td>
+                            {{ reg.get_payment_method_display }}<br>
+                            <span class="muted">{{ reg.payment_amount }}</span>
+                        </td>
+                        <td>
+                            {% with sms_log=reg.latest_sms_log %}
+                                {% if sms_log %}
+                                    {{ sms_log.get_status_display }}<br>
+                                    <span class="muted">{{ sms_log.created_at|date:"d M Y H:i" }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>{{ reg.exam_marks|default:"-" }}</td>
+                        <td>{{ reg.practical_marks|default:"-" }}</td>
+                        <td>{{ reg.calculated_marks|default:"-" }}</td>
+                        <td>{{ reg.total_marks|default:"-" }}</td>
+                        <td><a href="{% url 'enter_marks' reg.id %}">Update Marks</a></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="11">No exam registrations found for this view.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -408,3 +404,5 @@
     });
 </script>
 {% endblock %}
+
+

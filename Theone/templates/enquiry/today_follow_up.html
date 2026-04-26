@@ -3,62 +3,199 @@
 {% block content %}
 <style>
     .page-shell { display:grid; gap:20px; }
-    .hero-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, #17324d, #2f7f8f); color:#fff; }
+    .hero-card, .table-card, .filter-card, .message-card, .focus-card { padding:22px; }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .message-card { background:var(--surface-muted); border-left:4px solid var(--brand-black); }
     .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
     .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:#17324d; color:#fff; border:0; }
-    .secondary-link { background:#eef2f7; color:#17324d; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 14px; border-bottom:1px solid #e6ebf1; text-align:left; vertical-align:top; }
-    th { background:#f5f8fb; }
-    .meta { color:#617384; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:12px; align-items:end; }
+    .focus-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
+    .focus-card { background:linear-gradient(135deg, #fff8f8, #ffffff); }
+    .focus-card strong { display:block; font-size:18px; color:var(--brand-black); margin-bottom:6px; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:var(--brand-black); }
+    .meta { color:var(--text-muted); }
+    .section-title { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .section-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-black); font-size:13px; font-weight:700; }
+    .table-wrap { overflow-x:auto; }
+    @media (max-width: 900px) { .filter-grid { grid-template-columns:1fr; } }
 </style>
 
 <div class="page-shell">
     {% if messages %}
         {% for message in messages %}
-        <div class="table-card">{{ message }}</div>
+        <div class="message-card">{{ message }}</div>
         {% endfor %}
     {% endif %}
 
     <div class="hero-card">
         <h2 style="margin:0 0 8px;">Today Follow-up</h2>
-        <p style="margin:0;">Enquiries that need follow-up on {{ today }}.</p>
+        <p style="margin:0;">Work today's enquiries, overdue calls, and ready-for-admission leads from one operational page.</p>
         <div class="action-row">
             <a class="secondary-link" href="{% url 'enquiry_list' %}">Back to Enquiries</a>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-box">Today Follow-up<strong>{{ total_enquiries }}</strong></div>
+            <div class="stat-box">Overdue Follow-up<strong>{{ overdue_count }}</strong></div>
+            <div class="stat-box">Ready To Convert<strong>{{ ready_count }}</strong></div>
+        </div>
+    </div>
+
+    <div class="focus-grid">
+        <div class="focus-card">
+            <strong>Today's Priority</strong>
+            <div class="meta">Follow up on all leads due on {{ today }} and move ready candidates toward admission.</div>
+        </div>
+        <div class="focus-card">
+            <strong>Overdue Queue</strong>
+            <div class="meta">Use the overdue table to clear missed calls first and reduce stale enquiry buildup.</div>
+        </div>
+        <div class="focus-card">
+            <strong>Conversion Ready</strong>
+            <div class="meta">The ready section keeps admission-ready students separate so conversion actions are faster.</div>
+        </div>
+    </div>
+
+    <form method="get" class="filter-card">
+        <div class="filter-grid">
+            <div>
+                <label for="counsellor">Counsellor</label>
+                <select id="counsellor" name="counsellor">
+                    <option value="">All Counsellors</option>
+                    {% for counsellor in counsellors %}
+                    <option value="{{ counsellor.id }}" {% if counsellor_filter == counsellor.id|stringformat:"s" %}selected{% endif %}>{{ counsellor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button class="btn" type="submit">Apply</button>
+            {% if counsellor_filter %}
+            <a class="secondary-link" href="{% url 'today_follow_up' %}">Clear</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="table-card">
+        <div class="section-title">
+            <div>
+                <div class="section-kicker">Today Queue</div>
+                <h3 style="margin:10px 0 0;">Today Follow-up List</h3>
+            </div>
+            <div class="meta">Total: {{ total_enquiries }}</div>
+        </div>
+        <div class="table-wrap">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course / Center</th>
+                        <th>Counsellor</th>
+                        <th>Status</th>
+                        <th>Last Follow-up</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enquiry in enquiries %}
+                    <tr>
+                        <td><strong>{{ enquiry.name }}</strong><br><span class="meta">{{ enquiry.mobile_no }}</span></td>
+                        <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                        <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
+                        <td>{{ enquiry.get_status_display }}</td>
+                        <td>{{ enquiry.last_follow_up_date|default:"-" }}</td>
+                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No enquiry is due for follow-up today.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <div class="table-card">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-            <h3 style="margin:0;">Today Follow-up List</h3>
-            <div class="meta">Total: {{ total_enquiries }}</div>
+        <div class="section-title">
+            <div>
+                <div class="section-kicker">Overdue Queue</div>
+                <h3 style="margin:10px 0 0;">Overdue Follow-up</h3>
+            </div>
+            <div class="meta">Total: {{ overdue_count }}</div>
         </div>
-        <table>
-            <tr>
-                <th>Student</th>
-                <th>Course / Center</th>
-                <th>Counsellor</th>
-                <th>Status</th>
-                <th>Last Follow-up</th>
-                <th>Action</th>
-            </tr>
-            {% for enquiry in enquiries %}
-            <tr>
-                <td><strong>{{ enquiry.name }}</strong><br><span class="meta">{{ enquiry.mobile_no }}</span></td>
-                <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
-                <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
-                <td>{{ enquiry.get_status_display }}</td>
-                <td>{{ enquiry.last_follow_up_date|default:"-" }}</td>
-                <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a></td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6">No enquiry is due for follow-up today.</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="table-wrap">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course / Center</th>
+                        <th>Counsellor</th>
+                        <th>Next Follow-up</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enquiry in overdue_enquiries %}
+                    <tr>
+                        <td><strong>{{ enquiry.name }}</strong><br><span class="meta">{{ enquiry.mobile_no }}</span></td>
+                        <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                        <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
+                        <td>{{ enquiry.next_follow_up_date|default:"-" }}</td>
+                        <td>{{ enquiry.get_status_display }}</td>
+                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a>{% if not enquiry.is_converted %} | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No overdue follow-up enquiry.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="section-title">
+            <div>
+                <div class="section-kicker">Ready Leads</div>
+                <h3 style="margin:10px 0 0;">Ready For Admission</h3>
+            </div>
+            <div class="meta">Total: {{ ready_count }}</div>
+        </div>
+        <div class="table-wrap">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course / Center</th>
+                        <th>Counsellor</th>
+                        <th>Expected Joining</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enquiry in ready_enquiries %}
+                    <tr>
+                        <td><strong>{{ enquiry.name }}</strong><br><span class="meta">{{ enquiry.mobile_no }}</span></td>
+                        <td>{{ enquiry.interested_course.name|default:"-" }}<br><span class="meta">{{ enquiry.preferred_center.name|default:"-" }}</span></td>
+                        <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
+                        <td>{{ enquiry.expected_joining_date|default:"-" }}</td>
+                        <td>{{ enquiry.get_status_display }}</td>
+                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a>{% if not enquiry.is_converted %} | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">No ready enquiry available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
