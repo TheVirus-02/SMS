@@ -6,12 +6,14 @@ from student.portal import (
     ROLE_ADMIN,
     ROLE_COUNSELLOR,
     ROLE_TRAINER,
+    capability_required,
     role_required,
     scope_centers_for_user,
+    user_can_access_logistics,
 )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_access_logistics, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def logistics_dashboard(request):
     rows = []
     total_capacity = 0
@@ -54,14 +56,14 @@ def logistics_dashboard(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_access_logistics, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def update_logistics(request, id, action):
     log = CenterLogistics.objects.get(id=id)
     log.save()
     return redirect("logistics_dashboard")
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_access_logistics, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def update_total_pc(request, id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST request required.")
@@ -77,7 +79,7 @@ def update_total_pc(request, id):
     return JsonResponse(build_logistics_payload(log))
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_access_logistics, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def update_repair_pc(request, id):
     if request.method != "POST":
         return HttpResponseBadRequest("POST request required.")

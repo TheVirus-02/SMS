@@ -22,7 +22,7 @@
             <a class="btn" href="{% url 'update_enquiry' enquiry.id %}">Edit Enquiry</a>
             {% if enquiry.is_converted %}
             <a class="btn" href="{% url 'student_detail' enquiry.converted_student.id %}">Open Student Record</a>
-            {% else %}
+            {% elif portal_can_convert_enquiries %}
             <a class="btn" href="{% url 'convert_enquiry' enquiry.id %}">Convert To Admission</a>
             {% endif %}
             <form method="post" action="{% url 'delete_enquiry' enquiry.id %}" class="inline-form" onsubmit="return confirm('Delete this enquiry?');">
@@ -68,8 +68,10 @@
         <p class="css-inline-5">This enquiry has already been converted to admission.</p>
         <div><strong>Converted Date:</strong> {{ enquiry.converted_at|default:"-" }}</div>
         <div><strong>Student Record:</strong> <a href="{% url 'student_detail' enquiry.converted_student.id %}">{{ enquiry.converted_student.name }}</a></div>
-        {% else %}
+        {% elif portal_can_convert_enquiries %}
         <p class="css-inline-2">This enquiry is not converted yet. Use <strong>Convert To Admission</strong> when the student is ready to join.</p>
+        {% else %}
+        <p class="css-inline-2">This enquiry is not converted yet.</p>
         {% endif %}
     </div>
 </div>

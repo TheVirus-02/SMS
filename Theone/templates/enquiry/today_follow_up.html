@@ -129,7 +129,7 @@
                         <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
                         <td>{{ enquiry.next_follow_up_date|default:"-" }}</td>
                         <td>{{ enquiry.get_status_display }}</td>
-                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a>{% if not enquiry.is_converted %} | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>{% endif %}</td>
+                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a>{% if not enquiry.is_converted and portal_can_convert_enquiries %} | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>{% endif %}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -169,7 +169,7 @@
                         <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
                         <td>{{ enquiry.expected_joining_date|default:"-" }}</td>
                         <td>{{ enquiry.get_status_display }}</td>
-                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a>{% if not enquiry.is_converted %} | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>{% endif %}</td>
+                        <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> | <a href="{% url 'update_enquiry' enquiry.id %}">Update</a>{% if not enquiry.is_converted and portal_can_convert_enquiries %} | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>{% endif %}</td>
                     </tr>
                     {% empty %}
                     <tr>

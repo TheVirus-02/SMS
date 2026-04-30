@@ -8,12 +8,12 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import ExamRegistration, SmsLog, Student, StudentCourse, Trainer
-from student.portal import ROLE_ADMIN, role_required
+from student.portal import ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER, capability_required, user_can_view_exams
 from student.sms import send_exam_registration_sms
 from student.views.helpers import build_sms_status_context
 
 
-@role_required(ROLE_ADMIN)
+@capability_required(user_can_view_exams, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def register_exam(request, student_id):
     student = get_object_or_404(Student, id=student_id)
     completed_courses = StudentCourse.objects.select_related("course").filter(
@@ -86,7 +86,7 @@ def register_exam(request, student_id):
     )
 
 
-@role_required(ROLE_ADMIN)
+@capability_required(user_can_view_exams, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def exam_dashboard(request):
     registrations = ExamRegistration.objects.select_related(
         "student_course__student",
@@ -161,7 +161,7 @@ def exam_dashboard(request):
     )
 
 
-@role_required(ROLE_ADMIN)
+@capability_required(user_can_view_exams, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def enter_marks(request, reg_id):
     reg = get_object_or_404(
         ExamRegistration.objects.select_related(
@@ -186,7 +186,7 @@ def enter_marks(request, reg_id):
     return render(request, "exams/update_marks.html", {"reg": reg, "show_student_nav": False})
 
 
-@role_required(ROLE_ADMIN)
+@capability_required(user_can_view_exams, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def certificate_dashboard(request):
     search_query = request.GET.get("q", "").strip()
     status_filter = request.GET.get("status", "").strip()
@@ -225,7 +225,7 @@ def certificate_dashboard(request):
     )
 
 
-@role_required(ROLE_ADMIN)
+@capability_required(user_can_view_exams, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def toggle_certificate_status(request, reg_id):
     if request.method != "POST":
         return HttpResponseBadRequest("Invalid request method.")

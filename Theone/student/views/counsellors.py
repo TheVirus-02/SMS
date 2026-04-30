@@ -132,7 +132,7 @@ def update_counsellor(request, id):
     centers = Center.objects.all().order_by("name")
     if request.method == "POST":
         form_data = build_counsellor_form_data(request)
-        error = validate_counsellor_form(form_data)
+        error = validate_counsellor_form(form_data, current_user=counsellor.user)
         if error:
             return render(
                 request,
@@ -168,6 +168,18 @@ def update_counsellor(request, id):
                 "name": counsellor.name,
                 "mobile": counsellor.mobile or "",
                 "center_id": str(counsellor.center_id) if counsellor.center_id else "",
+                "record_scope": counsellor.record_scope,
+                "can_access_student_registration": counsellor.can_access_student_registration,
+                "can_access_student_records": counsellor.can_access_student_records,
+                "can_edit_students": counsellor.can_edit_students,
+                "can_manage_fees": counsellor.can_manage_fees,
+                "can_access_enquiries": counsellor.can_access_enquiries,
+                "can_convert_enquiries": counsellor.can_convert_enquiries,
+                "can_manage_batches": counsellor.can_manage_batches,
+                "can_access_attendance": counsellor.can_access_attendance,
+                "can_access_logistics": counsellor.can_access_logistics,
+                "can_view_reports": counsellor.can_view_reports,
+                "can_view_exams": counsellor.can_view_exams,
                 "can_send_fee_reminders": counsellor.can_send_fee_reminders,
                 "can_send_follow_up_reminders": counsellor.can_send_follow_up_reminders,
                 "address": counsellor.address or "",
@@ -197,6 +209,18 @@ def build_counsellor_form_data(request):
         "name": (request.POST.get("name") or "").strip(),
         "mobile": (request.POST.get("mobile") or "").strip() or None,
         "center_id": request.POST.get("center") or None,
+        "record_scope": request.POST.get("record_scope") or Counsellor.RECORD_SCOPE_CENTER,
+        "can_access_student_registration": request.POST.get("can_access_student_registration") == "on",
+        "can_access_student_records": request.POST.get("can_access_student_records") == "on",
+        "can_edit_students": request.POST.get("can_edit_students") == "on",
+        "can_manage_fees": request.POST.get("can_manage_fees") == "on",
+        "can_access_enquiries": request.POST.get("can_access_enquiries") == "on",
+        "can_convert_enquiries": request.POST.get("can_convert_enquiries") == "on",
+        "can_manage_batches": request.POST.get("can_manage_batches") == "on",
+        "can_access_attendance": request.POST.get("can_access_attendance") == "on",
+        "can_access_logistics": request.POST.get("can_access_logistics") == "on",
+        "can_view_reports": request.POST.get("can_view_reports") == "on",
+        "can_view_exams": request.POST.get("can_view_exams") == "on",
         "can_send_fee_reminders": request.POST.get("can_send_fee_reminders") == "on",
         "can_send_follow_up_reminders": request.POST.get("can_send_follow_up_reminders") == "on",
         "address": (request.POST.get("address") or "").strip() or None,
@@ -209,15 +233,22 @@ def build_counsellor_form_data(request):
     }
 
 
-def validate_counsellor_form(form_data):
+def validate_counsellor_form(form_data, current_user=None):
     if not form_data["name"]:
         return "Counsellor name is required."
+    if not form_data["user_id"] and not current_user:
+        if not form_data["login_username"]:
+            return "New counsellor login username is required."
+        if not form_data["login_password"]:
+            return "New counsellor password is required."
     if form_data["login_password"] and not form_data["login_username"] and not form_data["user_id"]:
         return "Enter a username when setting a login password."
     if form_data["login_username"]:
         queryset = User.objects.filter(username__iexact=form_data["login_username"])
         if form_data["user_id"]:
             queryset = queryset.exclude(id=form_data["user_id"])
+        elif current_user:
+            queryset = queryset.exclude(id=current_user.id)
         if queryset.exists():
             return "That login username already exists."
     return None
@@ -228,6 +259,18 @@ def empty_counsellor_form_data():
         "name": "",
         "mobile": "",
         "center_id": "",
+        "record_scope": Counsellor.RECORD_SCOPE_CENTER,
+        "can_access_student_registration": True,
+        "can_access_student_records": True,
+        "can_edit_students": True,
+        "can_manage_fees": True,
+        "can_access_enquiries": True,
+        "can_convert_enquiries": True,
+        "can_manage_batches": True,
+        "can_access_attendance": False,
+        "can_access_logistics": True,
+        "can_view_reports": True,
+        "can_view_exams": False,
         "can_send_fee_reminders": False,
         "can_send_follow_up_reminders": False,
         "address": "",
@@ -245,6 +288,18 @@ def normalize_counsellor_form_data(form_data):
         "name": form_data["name"],
         "mobile": form_data["mobile"] or "",
         "center_id": str(form_data["center_id"]) if form_data["center_id"] else "",
+        "record_scope": form_data["record_scope"] or Counsellor.RECORD_SCOPE_CENTER,
+        "can_access_student_registration": bool(form_data["can_access_student_registration"]),
+        "can_access_student_records": bool(form_data["can_access_student_records"]),
+        "can_edit_students": bool(form_data["can_edit_students"]),
+        "can_manage_fees": bool(form_data["can_manage_fees"]),
+        "can_access_enquiries": bool(form_data["can_access_enquiries"]),
+        "can_convert_enquiries": bool(form_data["can_convert_enquiries"]),
+        "can_manage_batches": bool(form_data["can_manage_batches"]),
+        "can_access_attendance": bool(form_data["can_access_attendance"]),
+        "can_access_logistics": bool(form_data["can_access_logistics"]),
+        "can_view_reports": bool(form_data["can_view_reports"]),
+        "can_view_exams": bool(form_data["can_view_exams"]),
         "can_send_fee_reminders": bool(form_data["can_send_fee_reminders"]),
         "can_send_follow_up_reminders": bool(form_data["can_send_follow_up_reminders"]),
         "address": form_data["address"] or "",
@@ -298,8 +353,10 @@ def resolve_portal_user(form_data, current_user=None, role_label="user"):
             current_user.save()
         return current_user
     if username:
-        user = User.objects.create_user(username=username, password=password or User.objects.make_random_password())
+        user = User.objects.create_user(username=username, password=password)
         user.first_name = form_data["name"]
+        user.is_staff = False
+        user.is_superuser = False
         user.save()
         return user
     return current_user
@@ -310,6 +367,18 @@ def build_counsellor_model_payload(form_data, user):
         "name": form_data["name"],
         "mobile": form_data["mobile"],
         "center_id": form_data["center_id"],
+        "record_scope": form_data["record_scope"],
+        "can_access_student_registration": form_data["can_access_student_registration"],
+        "can_access_student_records": form_data["can_access_student_records"],
+        "can_edit_students": form_data["can_edit_students"],
+        "can_manage_fees": form_data["can_manage_fees"],
+        "can_access_enquiries": form_data["can_access_enquiries"],
+        "can_convert_enquiries": form_data["can_convert_enquiries"],
+        "can_manage_batches": form_data["can_manage_batches"],
+        "can_access_attendance": form_data["can_access_attendance"],
+        "can_access_logistics": form_data["can_access_logistics"],
+        "can_view_reports": form_data["can_view_reports"],
+        "can_view_exams": form_data["can_view_exams"],
         "can_send_fee_reminders": form_data["can_send_fee_reminders"],
         "can_send_follow_up_reminders": form_data["can_send_follow_up_reminders"],
         "address": form_data["address"],

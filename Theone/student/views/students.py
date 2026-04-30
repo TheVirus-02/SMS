@@ -28,6 +28,7 @@ from student.portal import (
     ROLE_ADMIN,
     ROLE_COUNSELLOR,
     ROLE_TRAINER,
+    capability_required,
     scope_enquiries_for_user,
     get_portal_role,
     get_student_for_user_or_404,
@@ -38,6 +39,11 @@ from student.portal import (
     scope_counsellors_for_user,
     scope_students_for_user,
     scope_trainers_for_user,
+    user_can_access_attendance,
+    user_can_access_student_records,
+    user_can_access_student_registration,
+    user_can_edit_students,
+    user_can_view_reports,
     user_can_manage_fees,
     user_can_view_exams,
 )
@@ -246,7 +252,7 @@ def write_csv_response(filename, headers, rows):
     return response
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_student_registration, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def student_registration(request):
     context = student_form_options(request)
     if request.method == "POST":
@@ -289,12 +295,12 @@ def student_registration(request):
     return render(request, "student/student-registration.html", context)
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_access_student_records, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def record(request):
     return render(request, "student/record.html", build_student_record_context(request))
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_access_student_records, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def student_detail(request, id):
     student = get_student_for_user_or_404(
         request.user,
@@ -374,7 +380,7 @@ def student_detail(request, id):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_edit_students, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def update_student(request, id):
     student = get_student_for_user_or_404(request.user, id)
     if request.method == "POST":
@@ -406,7 +412,7 @@ def update_student(request, id):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def add_installment(request, student_id):
     student = get_student_for_user_or_404(request.user, student_id)
     last_installment = Installment.objects.filter(student=student).order_by("-installment_no").first()
@@ -438,7 +444,7 @@ def add_installment(request, student_id):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def edit_installment(request, installment_id):
     installment = get_object_or_404(Installment, id=installment_id)
     student = installment.student
@@ -468,7 +474,7 @@ def edit_installment(request, installment_id):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 @require_POST
 def delete_installment(request, installment_id):
     installment = get_object_or_404(Installment, id=installment_id)
@@ -479,7 +485,7 @@ def delete_installment(request, installment_id):
     return redirect("student_detail", id=student_id)
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_view_reports, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def today_collection_dashboard(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
@@ -556,12 +562,12 @@ def today_collection_dashboard(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def pending_fee_list(request):
     return render(request, "student/pending_fee_list.html", build_pending_fee_context(request))
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_view_reports, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def daily_admissions_report(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
@@ -597,7 +603,7 @@ def daily_admissions_report(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_view_reports, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def reporting_dashboard(request):
     today = date.today()
     date_from_value = request.GET.get("date_from", "").strip()
@@ -758,7 +764,7 @@ def reporting_dashboard(request):
     return render(request, "student/reporting_dashboard.html", context)
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_student_records, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def export_student_records_csv(request):
     context = build_student_record_context(request)
     return write_csv_response(
@@ -786,7 +792,7 @@ def export_student_records_csv(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def export_pending_fees_csv(request):
     context = build_pending_fee_context(request)
     return write_csv_response(
@@ -811,7 +817,7 @@ def export_pending_fees_csv(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_view_reports, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def export_today_collection_csv(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
@@ -863,7 +869,7 @@ def export_today_collection_csv(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_view_reports, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def export_daily_admissions_csv(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
@@ -900,7 +906,7 @@ def export_daily_admissions_csv(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def admission_receipt(request, student_id):
     student = get_student_for_user_or_404(
         request.user,
@@ -919,7 +925,7 @@ def admission_receipt(request, student_id):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_manage_fees, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def installment_receipt(request, installment_id):
     installment = get_object_or_404(
         Installment.objects.select_related("student__center", "student__trainer", "student__counsellor", "student__batch").prefetch_related("student__courses"),
@@ -939,14 +945,14 @@ def installment_receipt(request, installment_id):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def trainer_batches(request, trainer_id):
     trainer = get_object_or_404(scope_trainers_for_user(request.user, Trainer.objects.all()), id=trainer_id)
     batches = Batch.objects.filter(trainerschedule__trainer=trainer).distinct().order_by("time")
     return render(request, "attendance/batch_list.html", {"trainer": trainer, "batches": batches})
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def batch_students(request, batch_id):
     batch = get_object_or_404(scope_batches_for_user(request.user, Batch.objects.all()), id=batch_id)
     students = scope_students_for_user(request.user, Student.objects.filter(batch=batch))

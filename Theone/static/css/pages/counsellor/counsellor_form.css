@@ -7,6 +7,9 @@
     label { font-weight:600; color:var(--brand-black); }
     input, select, textarea { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
     textarea { min-height:96px; resize:vertical; }
+    .course-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; }
+    .course-option { display:flex; gap:8px; align-items:center; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff8f8; }
+    .course-option span { font-weight:500; }
     .error-box { margin-bottom:14px; padding:12px 14px; background:#fff0f0; color:#b23a3a; border-radius:12px; }
     .info-box { margin-top:18px; padding:14px 16px; border-radius:14px; background:var(--surface-muted); color:var(--brand-black); }
     .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }

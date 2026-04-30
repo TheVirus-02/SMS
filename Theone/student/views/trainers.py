@@ -81,12 +81,28 @@ def add_trainer(request):
             dob=request.POST.get("dob") or None,
             mobile=request.POST.get("mobile"),
             joining_date=request.POST.get("joining_date") or None,
+            record_scope=request.POST.get("record_scope") or Trainer.RECORD_SCOPE_ASSIGNED,
+            can_access_student_registration=request.POST.get("can_access_student_registration") == "on",
+            can_access_student_records=request.POST.get("can_access_student_records") == "on",
+            can_edit_students=request.POST.get("can_edit_students") == "on",
+            can_manage_fees=request.POST.get("can_manage_fees") == "on",
+            can_access_enquiries=request.POST.get("can_access_enquiries") == "on",
+            can_convert_enquiries=request.POST.get("can_convert_enquiries") == "on",
+            can_manage_batches=request.POST.get("can_manage_batches") == "on",
+            can_access_attendance=request.POST.get("can_access_attendance") == "on",
+            can_access_logistics=request.POST.get("can_access_logistics") == "on",
+            can_view_reports=request.POST.get("can_view_reports") == "on",
+            can_view_exams=request.POST.get("can_view_exams") == "on",
             user=user,
         )
         trainer.courses.set(request.POST.getlist("courses"))
         messages.success(request, f"{trainer.name} added successfully.")
         return redirect("trainer_detail", id=trainer.id)
-    return render(request, "trainer/add_trainer.html", {"courses": courses, "users": available_portal_users(), "form_data": {}})
+    return render(
+        request,
+        "trainer/add_trainer.html",
+        {"courses": courses, "users": available_portal_users(), "form_data": {"selected_course_ids": []}},
+    )
 
 
 @role_required(ROLE_ADMIN)
@@ -112,6 +128,18 @@ def update_trainer(request, id):
         trainer.dob = request.POST.get("dob") or None
         trainer.mobile = request.POST.get("mobile")
         trainer.joining_date = request.POST.get("joining_date") or None
+        trainer.record_scope = request.POST.get("record_scope") or Trainer.RECORD_SCOPE_ASSIGNED
+        trainer.can_access_student_registration = request.POST.get("can_access_student_registration") == "on"
+        trainer.can_access_student_records = request.POST.get("can_access_student_records") == "on"
+        trainer.can_edit_students = request.POST.get("can_edit_students") == "on"
+        trainer.can_manage_fees = request.POST.get("can_manage_fees") == "on"
+        trainer.can_access_enquiries = request.POST.get("can_access_enquiries") == "on"
+        trainer.can_convert_enquiries = request.POST.get("can_convert_enquiries") == "on"
+        trainer.can_manage_batches = request.POST.get("can_manage_batches") == "on"
+        trainer.can_access_attendance = request.POST.get("can_access_attendance") == "on"
+        trainer.can_access_logistics = request.POST.get("can_access_logistics") == "on"
+        trainer.can_view_reports = request.POST.get("can_view_reports") == "on"
+        trainer.can_view_exams = request.POST.get("can_view_exams") == "on"
         trainer.user = resolve_portal_user(request, current_user=trainer.user)
         trainer.save()
         trainer.courses.set(request.POST.getlist("courses"))
@@ -124,7 +152,23 @@ def update_trainer(request, id):
             "trainer": trainer,
             "courses": courses,
             "users": available_portal_users(trainer.user_id),
-            "form_data": {"login_username": trainer.user.username if trainer.user_id else "", "login_password": ""},
+            "form_data": {
+                "login_username": trainer.user.username if trainer.user_id else "",
+                "login_password": "",
+                "record_scope": trainer.record_scope,
+                "can_access_student_registration": trainer.can_access_student_registration,
+                "can_access_student_records": trainer.can_access_student_records,
+                "can_edit_students": trainer.can_edit_students,
+                "can_manage_fees": trainer.can_manage_fees,
+                "can_access_enquiries": trainer.can_access_enquiries,
+                "can_convert_enquiries": trainer.can_convert_enquiries,
+                "can_manage_batches": trainer.can_manage_batches,
+                "can_access_attendance": trainer.can_access_attendance,
+                "can_access_logistics": trainer.can_access_logistics,
+                "can_view_reports": trainer.can_view_reports,
+                "can_view_exams": trainer.can_view_exams,
+                "selected_course_ids": [str(course_id) for course_id in trainer.courses.values_list("id", flat=True)],
+            },
         },
     )
 
@@ -325,6 +369,24 @@ def available_portal_users(current_user_id=None):
 
 def trainer_form_data_from_request(request):
     return {
+        "name": (request.POST.get("name") or "").strip(),
+        "mobile": (request.POST.get("mobile") or "").strip(),
+        "age": request.POST.get("age") or "",
+        "dob": request.POST.get("dob") or "",
+        "joining_date": request.POST.get("joining_date") or "",
+        "record_scope": request.POST.get("record_scope") or Trainer.RECORD_SCOPE_ASSIGNED,
+        "can_access_student_registration": request.POST.get("can_access_student_registration") == "on",
+        "can_access_student_records": request.POST.get("can_access_student_records") == "on",
+        "can_edit_students": request.POST.get("can_edit_students") == "on",
+        "can_manage_fees": request.POST.get("can_manage_fees") == "on",
+        "can_access_enquiries": request.POST.get("can_access_enquiries") == "on",
+        "can_convert_enquiries": request.POST.get("can_convert_enquiries") == "on",
+        "can_manage_batches": request.POST.get("can_manage_batches") == "on",
+        "can_access_attendance": request.POST.get("can_access_attendance") == "on",
+        "can_access_logistics": request.POST.get("can_access_logistics") == "on",
+        "can_view_reports": request.POST.get("can_view_reports") == "on",
+        "can_view_exams": request.POST.get("can_view_exams") == "on",
+        "selected_course_ids": request.POST.getlist("courses"),
         "login_username": (request.POST.get("login_username") or "").strip(),
         "login_password": request.POST.get("login_password") or "",
         "user_id": request.POST.get("user") or "",
@@ -335,12 +397,21 @@ def validate_trainer_form(request, current_user=None):
     user_id = request.POST.get("user") or None
     login_username = (request.POST.get("login_username") or "").strip()
     login_password = request.POST.get("login_password") or ""
-    if login_password and not login_username and not user_id:
+    if not user_id and not current_user:
+        if not login_username:
+            return "New trainer login username is required."
+        if not login_password:
+            return "New trainer password is required."
+    if login_password and not login_username and not user_id and not current_user:
         return "Enter a username when setting a login password."
+    if login_username and not login_password and not user_id and not current_user:
+        return "Enter a password for the new trainer login."
     if login_username:
         queryset = User.objects.filter(username__iexact=login_username)
         if current_user:
             queryset = queryset.exclude(id=current_user.id)
+        elif user_id:
+            queryset = queryset.exclude(id=user_id)
         if queryset.exists():
             return "That login username already exists."
     return None
@@ -380,8 +451,10 @@ def resolve_portal_user(request, current_user=None):
             current_user.save()
         return current_user
     if login_username:
-        user = User.objects.create_user(username=login_username, password=login_password or User.objects.make_random_password())
+        user = User.objects.create_user(username=login_username, password=login_password)
         user.first_name = request.POST.get("name") or ""
+        user.is_staff = False
+        user.is_superuser = False
         user.save()
         return user
     return current_user

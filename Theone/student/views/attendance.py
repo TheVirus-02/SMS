@@ -10,6 +10,7 @@ from student.models import Attendance, Batch, Center, CenterLogistics, Student, 
 from student.portal import (
     ROLE_ADMIN,
     ROLE_TRAINER,
+    capability_required,
     get_portal_role,
     get_student_for_user_or_404,
     role_required,
@@ -17,10 +18,11 @@ from student.portal import (
     scope_centers_for_user,
     scope_students_for_user,
     scope_trainers_for_user,
+    user_can_access_attendance,
 )
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def attendance_batches(request):
     search_query = request.GET.get("q", "").strip()
     batch_data = []
@@ -90,7 +92,7 @@ def attendance_batches(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def attendance_batch_detail(request, batch_id):
     batch = get_object_or_404(scope_batches_for_user(request.user, Batch.objects.all()), id=batch_id)
     selected_date = parse_selected_date(request.GET.get("date"))
@@ -173,13 +175,13 @@ def attendance_batch_detail(request, batch_id):
     return render(request, "attendance/batch_detail.html", context)
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def mark_attendance(request, trainer_id, batch_id):
     base_url = reverse("attendance_batch_detail", args=[batch_id])
     return redirect(f"{base_url}?trainer={trainer_id}")
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 @require_POST
 def save_attendance_record(request, student_id):
     student = get_student_for_user_or_404(request.user, student_id, Student.objects.select_related("batch"))
@@ -216,7 +218,7 @@ def parse_selected_date(raw_date):
     return date.today()
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def daily_absentees(request):
     selected_date = parse_selected_date(request.GET.get("date"))
     center_id = request.GET.get("center", "").strip()
@@ -248,7 +250,7 @@ def daily_absentees(request):
     )
 
 
-@role_required(ROLE_ADMIN, ROLE_TRAINER)
+@capability_required(user_can_access_attendance, ROLE_ADMIN, ROLE_TRAINER)
 def attendance_monthly_summary(request):
     today = date.today()
     month_value = request.GET.get("month", "").strip()

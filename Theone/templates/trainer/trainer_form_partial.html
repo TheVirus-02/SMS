@@ -33,13 +33,19 @@
                     {% endfor %}
                 </select>
             </div>
+            {% if trainer and trainer.user_id %}
             <div class="field-group">
-                <label for="login_username">New Login Username</label>
-                <input id="login_username" type="text" name="login_username" value="{{ form_data.login_username|default:'' }}" placeholder="{% if trainer %}Linked login username{% else %}Create login from website{% endif %}">
+                <label>Current Username</label>
+                <input type="text" value="{{ trainer.user.username }}" readonly>
+            </div>
+            {% endif %}
+            <div class="field-group">
+                <label for="login_username">{% if trainer %}Change Username{% else %}New Login Username{% endif %}</label>
+                <input id="login_username" type="text" name="login_username" value="{{ form_data.login_username|default:'' }}" placeholder="{% if trainer %}Leave blank to keep current username{% else %}Required for new trainer login{% endif %}">
             </div>
             <div class="field-group">
                 <label for="login_password">{% if trainer %}Change Password{% else %}New Password{% endif %}</label>
-                <input id="login_password" type="text" name="login_password" value="" placeholder="{% if trainer %}Leave blank to keep current password{% else %}Set password for new or linked login{% endif %}">
+                <input id="login_password" type="password" name="login_password" value="" placeholder="{% if trainer %}Leave blank to keep current password{% else %}Required for new trainer login{% endif %}">
             </div>
             <div class="field-group">
                 <label for="age">Age</label>
@@ -54,11 +60,35 @@
                 <input id="joining_date" type="date" name="joining_date" value="{% if trainer %}{{ form_data.joining_date|default:trainer.joining_date|date:'Y-m-d' }}{% else %}{{ form_data.joining_date|default:'' }}{% endif %}">
             </div>
             <div class="field-group full">
+                <label for="record_scope">Record Scope</label>
+                <select id="record_scope" name="record_scope">
+                    <option value="assigned" {% if form_data.record_scope|default:trainer.record_scope|default:'assigned' == 'assigned' %}selected{% endif %}>Only assigned records</option>
+                    <option value="center" {% if form_data.record_scope|default:trainer.record_scope|default:'assigned' == 'center' %}selected{% endif %}>Assigned center records</option>
+                    <option value="all" {% if form_data.record_scope|default:trainer.record_scope|default:'assigned' == 'all' %}selected{% endif %}>All records</option>
+                </select>
+            </div>
+            <div class="field-group full">
+                <label>Portal Access</label>
+                <div class="course-grid">
+                    <label class="course-option"><input type="checkbox" name="can_access_student_registration" {% if form_data.can_access_student_registration|default:trainer.can_access_student_registration %}checked{% endif %}><span>Student registration</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_student_records" {% if form_data.can_access_student_records|default:trainer.can_access_student_records|default:True %}checked{% endif %}><span>Student records</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_edit_students" {% if form_data.can_edit_students|default:trainer.can_edit_students|default:True %}checked{% endif %}><span>Edit students</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_manage_fees" {% if form_data.can_manage_fees|default:trainer.can_manage_fees %}checked{% endif %}><span>Fee access</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_enquiries" {% if form_data.can_access_enquiries|default:trainer.can_access_enquiries %}checked{% endif %}><span>Enquiries</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_convert_enquiries" {% if form_data.can_convert_enquiries|default:trainer.can_convert_enquiries %}checked{% endif %}><span>Convert enquiries</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_manage_batches" {% if form_data.can_manage_batches|default:trainer.can_manage_batches %}checked{% endif %}><span>Batch system</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_attendance" {% if form_data.can_access_attendance|default:trainer.can_access_attendance|default:True %}checked{% endif %}><span>Attendance</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_logistics" {% if form_data.can_access_logistics|default:trainer.can_access_logistics|default:True %}checked{% endif %}><span>Logistics</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_view_reports" {% if form_data.can_view_reports|default:trainer.can_view_reports %}checked{% endif %}><span>Reports</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_view_exams" {% if form_data.can_view_exams|default:trainer.can_view_exams %}checked{% endif %}><span>Exam system</span></label>
+                </div>
+            </div>
+            <div class="field-group full">
                 <label>Courses</label>
                 <div class="course-grid">
                     {% for course in courses %}
                     <label class="course-option">
-                        <input type="checkbox" name="courses" value="{{ course.id }}" {% if trainer and course in trainer.courses.all %}checked{% endif %}>
+                        <input type="checkbox" name="courses" value="{{ course.id }}" {% if course.id|stringformat:"s" in form_data.selected_course_ids or trainer and course in trainer.courses.all %}checked{% endif %}>
                         <span>{{ course.name }}</span>
                     </label>
                     {% endfor %}
@@ -74,6 +104,7 @@
             <a class="secondary-link" href="{% url back_url_name %}">Back</a>
             {% endif %}
         </div>
+        <div class="helper-text">For a new trainer profile, login username and password are required unless you attach an existing portal user.</div>
     </form>
 </div>
 

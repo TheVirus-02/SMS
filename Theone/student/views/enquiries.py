@@ -13,6 +13,8 @@ from student.models import Batch, Center, Counsellor, Course, Enquiry, Student, 
 from student.portal import (
     ROLE_ADMIN,
     ROLE_COUNSELLOR,
+    ROLE_TRAINER,
+    capability_required,
     get_enquiry_for_user_or_404,
     get_portal_role,
     role_required,
@@ -21,6 +23,8 @@ from student.portal import (
     scope_counsellors_for_user,
     scope_enquiries_for_user,
     scope_trainers_for_user,
+    user_can_access_enquiries,
+    user_can_convert_enquiries,
 )
 
 
@@ -79,12 +83,12 @@ def write_csv_response(filename, headers, rows):
     return response
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def enquiry_list(request):
     return render(request, "enquiry/enquiry_list.html", build_enquiry_list_context(request))
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def today_follow_up(request):
     today = date.today()
     counsellor_filter = request.GET.get("counsellor", "").strip()
@@ -129,7 +133,7 @@ def today_follow_up(request):
 
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def export_enquiries_csv(request):
     context = build_enquiry_list_context(request)
     return write_csv_response(
@@ -156,7 +160,7 @@ def export_enquiries_csv(request):
 
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def enquiry_detail(request, id):
     enquiry = get_enquiry_for_user_or_404(
         request.user,
@@ -172,7 +176,7 @@ def enquiry_detail(request, id):
     return render(request, "enquiry/enquiry_detail.html", {"enquiry": enquiry})
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def add_enquiry(request):
     context = build_enquiry_form_context(form_data={"_request": request})
     if request.method == "POST":
@@ -180,7 +184,7 @@ def add_enquiry(request):
     return render(request, "enquiry/enquiry_form.html", context)
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def update_enquiry(request, id):
     enquiry = get_enquiry_for_user_or_404(request.user, id)
     context = build_enquiry_form_context(enquiry=enquiry, form_data={"_request": request})
@@ -189,7 +193,7 @@ def update_enquiry(request, id):
     return render(request, "enquiry/enquiry_form.html", context)
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_access_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 @require_POST
 def delete_enquiry(request, id):
     enquiry = get_enquiry_for_user_or_404(request.user, id)
@@ -203,7 +207,7 @@ def delete_enquiry(request, id):
     return redirect("enquiry_list")
 
 
-@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@capability_required(user_can_convert_enquiries, ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def convert_enquiry(request, id):
     enquiry = get_enquiry_for_user_or_404(
         request.user,

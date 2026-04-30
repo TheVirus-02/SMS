@@ -17,10 +17,31 @@ class Course(models.Model):
         return self.name
 
 class Counsellor(models.Model):
+    RECORD_SCOPE_ASSIGNED = "assigned"
+    RECORD_SCOPE_CENTER = "center"
+    RECORD_SCOPE_ALL = "all"
+    RECORD_SCOPE_CHOICES = [
+        (RECORD_SCOPE_ASSIGNED, "Only assigned records"),
+        (RECORD_SCOPE_CENTER, "Center records"),
+        (RECORD_SCOPE_ALL, "All records"),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="counsellor_profile")
     name = models.CharField(max_length=100)
     mobile = models.CharField(max_length=15, null=True, blank=True)
     center = models.ForeignKey('Center', on_delete=models.SET_NULL, null=True, blank=True)
+    record_scope = models.CharField(max_length=20, choices=RECORD_SCOPE_CHOICES, default=RECORD_SCOPE_CENTER)
+    can_access_student_registration = models.BooleanField(default=True)
+    can_access_student_records = models.BooleanField(default=True)
+    can_edit_students = models.BooleanField(default=True)
+    can_manage_fees = models.BooleanField(default=True)
+    can_access_enquiries = models.BooleanField(default=True)
+    can_convert_enquiries = models.BooleanField(default=True)
+    can_manage_batches = models.BooleanField(default=True)
+    can_access_attendance = models.BooleanField(default=False)
+    can_access_logistics = models.BooleanField(default=True)
+    can_view_reports = models.BooleanField(default=True)
+    can_view_exams = models.BooleanField(default=False)
     can_send_fee_reminders = models.BooleanField(default=False)
     can_send_follow_up_reminders = models.BooleanField(default=False)
     address = models.TextField(null=True, blank=True)
@@ -308,12 +329,33 @@ class Student(models.Model):
 
 
 class Trainer(models.Model):
+    RECORD_SCOPE_ASSIGNED = "assigned"
+    RECORD_SCOPE_CENTER = "center"
+    RECORD_SCOPE_ALL = "all"
+    RECORD_SCOPE_CHOICES = [
+        (RECORD_SCOPE_ASSIGNED, "Only assigned records"),
+        (RECORD_SCOPE_CENTER, "Assigned center records"),
+        (RECORD_SCOPE_ALL, "All records"),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="trainer_profile")
     name = models.CharField(max_length=100)
     age = models.IntegerField(null=True, blank=True,default=0)
     dob = models.DateField(null=True, blank=True)
     mobile = models.CharField(max_length=15)
     joining_date = models.DateField(default=date.today,null=True, blank=True)
+    record_scope = models.CharField(max_length=20, choices=RECORD_SCOPE_CHOICES, default=RECORD_SCOPE_ASSIGNED)
+    can_access_student_registration = models.BooleanField(default=False)
+    can_access_student_records = models.BooleanField(default=True)
+    can_edit_students = models.BooleanField(default=True)
+    can_manage_fees = models.BooleanField(default=False)
+    can_access_enquiries = models.BooleanField(default=False)
+    can_convert_enquiries = models.BooleanField(default=False)
+    can_manage_batches = models.BooleanField(default=False)
+    can_access_attendance = models.BooleanField(default=True)
+    can_access_logistics = models.BooleanField(default=True)
+    can_view_reports = models.BooleanField(default=False)
+    can_view_exams = models.BooleanField(default=False)
     courses = models.ManyToManyField('Course', blank=True)
 
     def __str__(self):

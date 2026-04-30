@@ -36,26 +36,25 @@
             <div class="nav-label">Navigation</div>
             <nav class="navbar">
                 <a href="{% url 'index' %}">Dashboard</a>
-                {% if portal_is_admin or portal_is_counsellor %}
+                {% if portal_can_access_student_registration %}
                 <a href="{% url 'student_registration' %}">Student Registration</a>
                 {% endif %}
-                {% if show_student_nav %}
-                <a href="{% url 'update_student' student.id %}">Update Student</a>
+                {% if show_student_nav and portal_can_edit_students %}
+                    <a href="{% url 'update_student' student.id %}">Update Student</a>
                 {% endif %}
                 {% if portal_is_admin %}
                 <a href="{% url 'counsellor_list' %}">Counsellors</a>
                 <a href="{% url 'course_list' %}">Courses</a>
                 <a href="{% url 'trainer_list' %}">Trainers</a>
                 {% endif %}
-                {% if portal_is_admin or portal_is_counsellor %}
+                {% if portal_can_access_enquiries %}
                 <a href="{% url 'enquiry_list' %}">Enquiries</a>
                 {% endif %}
-                {% if portal_is_admin or portal_can_manage_fees %}
+                {% if portal_can_access_student_records %}
                 <a href="{% url 'record' %}">Student Records</a>
+                {% endif %}
+                {% if portal_can_manage_fees %}
                 <a href="{% url 'pending_fee_list' %}">Pending Fees</a>
-                {% elif portal_is_trainer %}
-                <a href="{% url 'record' %}">My Students</a>
-                <a href="{% url 'pending_fee_list' %}">Fee View</a>
                 {% endif %}
                 {% if portal_can_manage_batches %}
                 <a href="{% url 'batch_list' %}">Batch System</a>
@@ -65,6 +64,9 @@
                 {% endif %}
                 {% if portal_can_access_logistics %}
                 <a href="{% url 'logistics_dashboard' %}">Logistics</a>
+                {% endif %}
+                {% if portal_can_view_reports %}
+                <a href="{% url 'reporting_dashboard' %}">Reports</a>
                 {% endif %}
                 {% if portal_can_access_reminder_center %}
                 <a href="{% url 'reminder_center' %}">Reminder Center</a>

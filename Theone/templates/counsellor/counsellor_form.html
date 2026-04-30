@@ -50,11 +50,11 @@
             {% endif %}
             <div class="field-group">
                 <label for="login_username">{% if counsellor %}Change Username{% else %}New Login Username{% endif %}</label>
-                <input id="login_username" type="text" name="login_username" value="{% if counsellor %}{% else %}{{ form_data.login_username }}{% endif %}" placeholder="{% if counsellor %}Leave blank to keep current username{% else %}Create login from website{% endif %}">
+                <input id="login_username" type="text" name="login_username" value="{{ form_data.login_username }}" placeholder="{% if counsellor %}Leave blank to keep current username{% else %}Required for new counsellor login{% endif %}">
             </div>
             <div class="field-group">
                 <label for="login_password">{% if counsellor %}Change Password{% else %}New Password{% endif %}</label>
-                <input id="login_password" type="text" name="login_password" value="" placeholder="{% if counsellor %}Leave blank to keep current password{% else %}Set password for new or linked login{% endif %}">
+                <input id="login_password" type="password" name="login_password" value="" placeholder="{% if counsellor %}Leave blank to keep current password{% else %}Required for new counsellor login{% endif %}">
             </div>
             <div class="field-group">
                 <label for="center">Center</label>
@@ -66,6 +66,30 @@
                 </select>
             </div>
             <div class="field-group">
+                <label for="record_scope">Record Scope</label>
+                <select id="record_scope" name="record_scope">
+                    <option value="assigned" {% if form_data.record_scope == 'assigned' %}selected{% endif %}>Only assigned records</option>
+                    <option value="center" {% if form_data.record_scope == 'center' %}selected{% endif %}>Center records</option>
+                    <option value="all" {% if form_data.record_scope == 'all' %}selected{% endif %}>All records</option>
+                </select>
+            </div>
+            <div class="field-group full">
+                <label class="css-inline-3">Portal Access</label>
+                <div class="course-grid">
+                    <label class="course-option"><input type="checkbox" name="can_access_student_registration" {% if form_data.can_access_student_registration %}checked{% endif %} class="css-inline-5"><span>Student registration</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_student_records" {% if form_data.can_access_student_records %}checked{% endif %} class="css-inline-5"><span>Student records</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_edit_students" {% if form_data.can_edit_students %}checked{% endif %} class="css-inline-5"><span>Edit students</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_manage_fees" {% if form_data.can_manage_fees %}checked{% endif %} class="css-inline-5"><span>Fee access</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_enquiries" {% if form_data.can_access_enquiries %}checked{% endif %} class="css-inline-5"><span>Enquiries</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_convert_enquiries" {% if form_data.can_convert_enquiries %}checked{% endif %} class="css-inline-5"><span>Convert enquiries</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_manage_batches" {% if form_data.can_manage_batches %}checked{% endif %} class="css-inline-5"><span>Batch system</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_attendance" {% if form_data.can_access_attendance %}checked{% endif %} class="css-inline-5"><span>Attendance</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_access_logistics" {% if form_data.can_access_logistics %}checked{% endif %} class="css-inline-5"><span>Logistics</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_view_reports" {% if form_data.can_view_reports %}checked{% endif %} class="css-inline-5"><span>Reports</span></label>
+                    <label class="course-option"><input type="checkbox" name="can_view_exams" {% if form_data.can_view_exams %}checked{% endif %} class="css-inline-5"><span>Exam system</span></label>
+                </div>
+            </div>
+            <div class="field-group full">
                 <label class="css-inline-3">Reminder Access</label>
                 <label class="css-inline-4">
                     <input type="checkbox" name="can_send_fee_reminders" {% if form_data.can_send_fee_reminders %}checked{% endif %} class="css-inline-5">
@@ -95,7 +119,7 @@
         </div>
 
         <div class="info-box">
-            This page is linked to the student records through the existing counsellor field, so the student list on the counsellor profile updates automatically. Reminder access here controls whether this counsellor can open the reminder center and send SMS reminder actions from the portal.
+            This page is linked to the student records through the existing counsellor field, so the student list on the counsellor profile updates automatically. For a new counsellor profile, login username and password are required unless you attach an existing portal user.
         </div>
 
         <div class="action-row">

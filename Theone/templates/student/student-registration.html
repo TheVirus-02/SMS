@@ -137,6 +137,7 @@
             </div>
         </div>
 
+        {% if can_manage_fees %}
         <h3 class="section-title css-inline-1">Fee Details</h3>
         <div class="form-grid">
             <div class="field-group">
@@ -154,6 +155,7 @@
             Remaining Fee
             <strong id="remaining-fee">0</strong>
         </div>
+        {% endif %}
 
         <div>
             <button class="submit-btn" type="submit">Register Student</button>
@@ -165,14 +167,26 @@
 {% block scripts %}
 <script>
 function updateFeeSummary() {
-    const total = parseInt(document.getElementById('course_fee').value || '0', 10);
-    const paid = parseInt(document.getElementById('paid_fee').value || '0', 10);
+    const courseFeeInput = document.getElementById('course_fee');
+    const paidFeeInput = document.getElementById('paid_fee');
+    const remainingFee = document.getElementById('remaining-fee');
+    if (!courseFeeInput || !paidFeeInput || !remainingFee) {
+        return;
+    }
+    const total = parseInt(courseFeeInput.value || '0', 10);
+    const paid = parseInt(paidFeeInput.value || '0', 10);
     const remaining = Math.max(total - paid, 0);
-    document.getElementById('remaining-fee').innerText = remaining;
+    remainingFee.innerText = remaining;
 }
 
-document.getElementById('course_fee').addEventListener('input', updateFeeSummary);
-document.getElementById('paid_fee').addEventListener('input', updateFeeSummary);
+const courseFeeInput = document.getElementById('course_fee');
+const paidFeeInput = document.getElementById('paid_fee');
+if (courseFeeInput) {
+    courseFeeInput.addEventListener('input', updateFeeSummary);
+}
+if (paidFeeInput) {
+    paidFeeInput.addEventListener('input', updateFeeSummary);
+}
 updateFeeSummary();
 </script>
 {% endblock %}

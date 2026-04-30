@@ -105,8 +105,10 @@
                             <a href="{% url 'update_enquiry' enquiry.id %}">Edit</a>
                             {% if enquiry.is_converted %}
                             | <a href="{% url 'student_detail' enquiry.converted_student.id %}">Student</a>
-                            {% else %}
+                            {% elif portal_can_convert_enquiries %}
                             | <a href="{% url 'convert_enquiry' enquiry.id %}">Convert</a>
+                            {% else %}
+                            
                             {% endif %}
                         </td>
                     </tr>
