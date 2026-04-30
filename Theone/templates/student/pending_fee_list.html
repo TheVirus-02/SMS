@@ -13,7 +13,9 @@
         <h2 class="css-inline-1">Pending Fee List</h2>
         <p class="css-inline-2">Find students with dues quickly and jump straight to collection actions.</p>
         <div class="actions-row">
+            {% if can_manage_fees %}
             <a class="secondary-link" href="{% url 'today_collection_dashboard' %}">Today Collection</a>
+            {% endif %}
             <a class="secondary-link" href="{% url 'index' %}">Back to Dashboard</a>
         </div>
         <div class="stats-grid">
@@ -69,7 +71,9 @@
         <div class="actions-row">
             <button class="btn" type="submit">Apply Filters</button>
             <a class="secondary-link" href="{% url 'pending_fee_list' %}">Clear</a>
+            {% if can_manage_fees %}
             <a class="secondary-link" href="{% url 'export_pending_fees_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+            {% endif %}
         </div>
     </form>
 
@@ -99,7 +103,9 @@
                 <td>
                     <div class="actions-row css-inline-3">
                         <a class="mini-action" href="{% url 'student_detail' student.id %}">View</a>
+                        {% if can_manage_fees %}
                         <a class="mini-action" href="{% url 'add_installment' student.id %}">Add Installment</a>
+                        {% endif %}
                     </div>
                 </td>
             </tr>

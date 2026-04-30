@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from student.models import (
     Attendance,
@@ -468,13 +469,13 @@ def edit_installment(request, installment_id):
 
 
 @role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@require_POST
 def delete_installment(request, installment_id):
     installment = get_object_or_404(Installment, id=installment_id)
     student_id = installment.student_id
     get_student_for_user_or_404(request.user, student_id)
-    if request.method == "POST":
-        installment.delete()
-        messages.success(request, "Installment deleted successfully.")
+    installment.delete()
+    messages.success(request, "Installment deleted successfully.")
     return redirect("student_detail", id=student_id)
 
 

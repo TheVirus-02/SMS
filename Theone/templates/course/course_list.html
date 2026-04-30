@@ -71,7 +71,10 @@
                         <td>
                             <a href="{% url 'course_detail' course.id %}">Open</a> |
                             <a href="{% url 'update_course' course.id %}">Edit</a> |
-                            <a href="{% url 'delete_course' course.id %}" onclick="return confirm('Delete this course?')">Delete</a>
+                            <form method="post" action="{% url 'delete_course' course.id %}" class="inline-form" onsubmit="return confirm('Delete this course?');">
+                                {% csrf_token %}
+                                <button type="submit">Delete</button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}

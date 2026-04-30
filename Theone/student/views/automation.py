@@ -365,9 +365,11 @@ def staff_center_analytics(request):
         Installment.objects.select_related("student__center", "student__trainer", "student__counsellor")
         .filter(installment_date__range=(date_from, date_to))
     )
-    pending_students = get_pending_fee_students()
+    pending_students = get_pending_fee_students(request.user)
     overdue_follow_ups = [
-        enquiry for enquiry in get_follow_up_enquiries() if enquiry.next_follow_up_date and enquiry.next_follow_up_date < today
+        enquiry
+        for enquiry in get_follow_up_enquiries(request.user)
+        if enquiry.next_follow_up_date and enquiry.next_follow_up_date < today
     ]
 
     center_rows = []

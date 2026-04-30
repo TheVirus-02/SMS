@@ -4,75 +4,13 @@
 <link rel="stylesheet" href="{% static 'css/pages/index.css' %}">
 {% endblock %}
 
-
-
 {% block content %}
-
-
 <div class="dashboard-panel css-inline-1">
     <h2 class="css-inline-2">Student Management Dashboard</h2>
     <p class="css-inline-3">Track students, fees, attendance, enquiries, and center activity from one branded workspace.</p>
 </div>
 
-<div class="dashboard-panel brand-banner">
-    <img src="{% static 'images/matrix-dashboard-banner.png' %}" alt="Matrix Computer Education">
-</div>
-
 <div class="dashboard-panel table-card css-inline-4">
-    <h4>Quick Actions</h4>
-    <div class="action-grid">
-        <a href="{% url 'student_registration' %}">New Student Registration</a>
-        <a href="{% url 'add_enquiry' %}">Add Enquiry</a>
-        <a href="{% url 'today_collection_dashboard' %}">Today Collection</a>
-        <a href="{% url 'daily_admissions_report' %}">Daily Admissions</a>
-        <a href="{% url 'pending_fee_list' %}">Pending Fee List</a>
-        <a href="{% url 'today_follow_up' %}">Today Follow-Up</a>
-        <a href="{% url 'daily_absentees' %}">Daily Absentees</a>
-        <a href="{% url 'attendance_monthly_summary' %}">Attendance Summary</a>
-        <a href="{% url 'reporting_dashboard' %}">Reports and Exports</a>
-        <a href="{% url 'reminder_center' %}">Reminder Center</a>
-        <a href="{% url 'staff_center_analytics' %}">Staff / Center Analytics</a>
-        <a href="{% url 'communication_log_list' %}">Communication Logs</a>
-        <a href="{% url 'daily_summary' %}">Daily Summary</a>
-        <a href="{% url 'record' %}">View Records</a>
-        <a href="{% url 'trainer_list' %}">Manage Trainers</a>
-        <a href="{% url 'attendance_batches' %}">Mark Attendance</a>
-    </div>
-</div>
-
-<div class="dashboard-panel table-card">
-    <div class="css-inline-5">
-        <div>
-            <h4 class="css-inline-6">Automation Alerts</h4>
-            <div class="muted-text css-inline-7">High-priority reminders and stale follow-up items.</div>
-        </div>
-        <a href="{% url 'reminder_center' %}" class="btn-secondary">Open Reminder Center</a>
-    </div>
-    <div class="alert-grid css-inline-8">
-        <div class="alert-box">
-            Overdue Fee Cases
-            <strong>{{ overdue_fee_alert_count }}</strong>
-            <div>Older pending fee records needing contact</div>
-        </div>
-        <div class="alert-box">
-            Today Follow-Ups
-            <strong>{{ today_follow_up_count }}</strong>
-            <div>Enquiries to contact today</div>
-        </div>
-        <div class="alert-box">
-            Overdue Follow-Ups
-            <strong>{{ overdue_follow_up_alert_count }}</strong>
-            <div>Enquiries missed beyond follow-up date</div>
-        </div>
-        <div class="alert-box">
-            Stale Enquiries
-            <strong>{{ stale_enquiry_alert_count }}</strong>
-            <div>Enquiries untouched for 7+ days</div>
-        </div>
-    </div>
-</div>
-
-<div class="dashboard-panel table-card">
     <h4>Search Students By Name And Course</h4>
     <form method="get" class="search-form">
         <div class="form-group">
@@ -145,6 +83,60 @@
     {% else %}
         <p class="muted-text">Use the filters above to search students and view fee details in table format.</p>
     {% endif %}
+</div>
+
+<div class="dashboard-panel table-card css-inline-4">
+    <h4>Quick Actions</h4>
+    <div class="action-grid">
+        <a href="{% url 'student_registration' %}">New Student Registration</a>
+        <a href="{% url 'add_enquiry' %}">Add Enquiry</a>
+        <a href="{% url 'today_collection_dashboard' %}">Today Collection</a>
+        <a href="{% url 'daily_admissions_report' %}">Daily Admissions</a>
+        <a href="{% url 'pending_fee_list' %}">Pending Fee List</a>
+        <a href="{% url 'today_follow_up' %}">Today Follow-Up</a>
+        <a href="{% url 'daily_absentees' %}">Daily Absentees</a>
+        <a href="{% url 'attendance_monthly_summary' %}">Attendance Summary</a>
+        <a href="{% url 'reporting_dashboard' %}">Reports and Exports</a>
+        <a href="{% url 'reminder_center' %}">Reminder Center</a>
+        <a href="{% url 'staff_center_analytics' %}">Staff / Center Analytics</a>
+        <a href="{% url 'communication_log_list' %}">Communication Logs</a>
+        <a href="{% url 'daily_summary' %}">Daily Summary</a>
+        <a href="{% url 'record' %}">View Records</a>
+        <a href="{% url 'trainer_list' %}">Manage Trainers</a>
+        <a href="{% url 'attendance_batches' %}">Mark Attendance</a>
+    </div>
+</div>
+
+<div class="dashboard-panel table-card">
+    <div class="css-inline-5">
+        <div>
+            <h4 class="css-inline-6">Automation Alerts</h4>
+            <div class="muted-text css-inline-7">High-priority reminders and stale follow-up items.</div>
+        </div>
+        <a href="{% url 'reminder_center' %}" class="btn-secondary">Open Reminder Center</a>
+    </div>
+    <div class="alert-grid css-inline-8">
+        <div class="alert-box">
+            Overdue Fee Cases
+            <strong>{{ overdue_fee_alert_count }}</strong>
+            <div>Older pending fee records needing contact</div>
+        </div>
+        <div class="alert-box">
+            Today Follow-Ups
+            <strong>{{ today_follow_up_count }}</strong>
+            <div>Enquiries to contact today</div>
+        </div>
+        <div class="alert-box">
+            Overdue Follow-Ups
+            <strong>{{ overdue_follow_up_alert_count }}</strong>
+            <div>Enquiries missed beyond follow-up date</div>
+        </div>
+        <div class="alert-box">
+            Stale Enquiries
+            <strong>{{ stale_enquiry_alert_count }}</strong>
+            <div>Enquiries untouched for 7+ days</div>
+        </div>
+    </div>
 </div>
 
 <div class="dashboard-grid">

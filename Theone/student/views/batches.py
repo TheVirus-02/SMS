@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from student.models import Batch, Center, Student, Trainer, TrainerSchedule
 from student.portal import (
@@ -148,6 +149,7 @@ def update_batch(request, id):
 
 
 @role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@require_POST
 def delete_batch(request, id):
     batch = get_batch_for_user_or_404(request.user, id)
     assigned_student_count = scope_students_for_user(request.user, Student.objects.filter(batch=batch)).count()
@@ -183,6 +185,7 @@ def update_batch_assignment(request, id):
 
 
 @role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@require_POST
 def delete_batch_assignment(request, id):
     schedule = get_object_or_404(TrainerSchedule.objects.select_related("batch"), id=id)
     get_batch_for_user_or_404(request.user, schedule.batch_id)

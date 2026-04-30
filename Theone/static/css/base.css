@@ -124,8 +124,23 @@ body.is-resizing .sidebar-resizer::after {
     font-weight: 800;
 }
 
+.brand-logo-wrap {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.92);
+}
+
+.brand-logo {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 92px;
+    object-fit: contain;
+}
+
 .brand-subtitle {
-    margin: 8px 0 0;
+    margin: 12px 0 0;
     color: rgba(255, 255, 255, 0.68);
     font-size: 13px;
     line-height: 1.5;
@@ -432,6 +447,28 @@ tbody tr:hover td {
 .secondary-link:hover {
     filter: brightness(1.08);
     transform: translateY(-1px);
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.inline-form button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.inline-form .danger-link,
+.inline-form .action-btn,
+.inline-form .delete-btn {
+    text-decoration: none;
 }
 
 .required-star {

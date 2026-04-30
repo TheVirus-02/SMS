@@ -160,34 +160,6 @@
         margin-top: 10px;
     }
 
-    .brand-banner {
-        margin-top: 0;
-        padding: 12px;
-        overflow: hidden;
-        animation: bannerReveal 0.9s ease-out both;
-    }
-
-    .brand-banner img {
-        display: block;
-        width: 100%;
-        max-width: 980px;
-        margin: 0 auto;
-        border-radius: 12px;
-        background: #ffffff;
-        object-fit: contain;
-    }
-
-    @keyframes bannerReveal {
-        from {
-            opacity: 0;
-            transform: translateY(18px) scale(0.98);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
     @media (max-width: 768px) {
         .dashboard-layout {
             grid-template-columns: 1fr;

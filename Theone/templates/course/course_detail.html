@@ -20,7 +20,10 @@
         <p class="css-inline-2">Course profile with assigned trainers and enrolled students.</p>
         <div class="action-row">
             <a class="btn" href="{% url 'update_course' course.id %}">Edit Course</a>
-            <a class="danger-link" href="{% url 'delete_course' course.id %}" onclick="return confirm('Delete this course?')">Delete Course</a>
+            <form method="post" action="{% url 'delete_course' course.id %}" class="inline-form" onsubmit="return confirm('Delete this course?');">
+                {% csrf_token %}
+                <button type="submit" class="danger-link">Delete Course</button>
+            </form>
             <a class="secondary-link" href="{% url 'course_list' %}">Back to Courses</a>
         </div>
     </div>
@@ -34,7 +37,11 @@
         <h3 class="css-inline-3">Assigned Trainers</h3>
         <div class="trainer-tags">
             {% for trainer in trainers %}
+            {% if portal_is_admin %}
             <a class="trainer-tag css-inline-5" href="{% url 'trainer_detail' trainer.id %}">{{ trainer.name }}</a>
+            {% else %}
+            <span class="trainer-tag css-inline-5">{{ trainer.name }}</span>
+            {% endif %}
             {% empty %}
             <span class="meta">No trainer assigned.</span>
             {% endfor %}

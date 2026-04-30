@@ -25,7 +25,10 @@
             {% else %}
             <a class="btn" href="{% url 'convert_enquiry' enquiry.id %}">Convert To Admission</a>
             {% endif %}
-            <a class="danger-link" href="{% url 'delete_enquiry' enquiry.id %}" onclick="return confirm('Delete this enquiry?')">Delete Enquiry</a>
+            <form method="post" action="{% url 'delete_enquiry' enquiry.id %}" class="inline-form" onsubmit="return confirm('Delete this enquiry?');">
+                {% csrf_token %}
+                <button type="submit" class="danger-link">Delete Enquiry</button>
+            </form>
             <a class="secondary-link" href="{% url 'enquiry_list' %}">Back to Enquiries</a>
         </div>
     </div>

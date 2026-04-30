@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from student.models import Course, StudentCourse, Trainer
 from student.portal import ROLE_ADMIN, role_required
@@ -57,6 +58,7 @@ def add_course(request):
                 request,
                 "course/course_form.html",
                 {
+                    "course": None,
                     "trainers": trainers,
                     "selected_name": course_name,
                     "selected_description": (request.POST.get("description") or "").strip(),
@@ -76,7 +78,14 @@ def add_course(request):
     return render(
         request,
         "course/course_form.html",
-        {"trainers": trainers, "selected_name": "", "selected_description": "", "selected_trainers": [], "error": []},
+        {
+            "course": None,
+            "trainers": trainers,
+            "selected_name": "",
+            "selected_description": "",
+            "selected_trainers": [],
+            "error": [],
+        },
     )
 
 
@@ -123,6 +132,7 @@ def update_course(request, id):
 
 
 @role_required(ROLE_ADMIN)
+@require_POST
 def delete_course(request, id):
     course = get_object_or_404(Course, id=id)
     if StudentCourse.objects.filter(course=course).exists():

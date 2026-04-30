@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from student.models import Batch, Center, Counsellor, Course, Enquiry, Student, Trainer
 from student.portal import (
@@ -189,6 +190,7 @@ def update_enquiry(request, id):
 
 
 @role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
+@require_POST
 def delete_enquiry(request, id):
     enquiry = get_enquiry_for_user_or_404(request.user, id)
     if enquiry.converted_student_id:

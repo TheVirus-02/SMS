@@ -103,7 +103,7 @@
             <div class="info-list">
                 <div class="info-item"><span>Counsellor</span><strong>{{ student.counsellor.name|default:"-" }}</strong></div>
                 <div class="info-item"><span>Joining Date</span><strong>{{ student.joining_date|default:"-" }}</strong></div>
-                <div class="info-item"><span>Trainer</span><strong>{{ student.trainer.name|default:"-" }}</strong></div>
+                <div class="info-item"><span>Trainer</span><strong>{% if portal_is_admin and student.trainer %}<a href="{% url 'trainer_detail' student.trainer.id %}">{{ student.trainer.name }}</a>{% else %}{{ student.trainer.name|default:"-" }}{% endif %}</strong></div>
                 <div class="info-item"><span>Batch</span><strong>{{ student.batch.time|default:"-" }}</strong></div>
                 <div class="info-item"><span>Center</span><strong>{{ student.center.name|default:"-" }}</strong></div>
                 <div class="info-item"><span>Reference Source</span><strong>{{ student.reference_source|default:"-" }}</strong></div>

@@ -20,7 +20,10 @@
         <p class="css-inline-2">Counsellor profile and the students currently mapped under this counsellor.</p>
         <div class="action-row">
             <a class="btn" href="{% url 'update_counsellor' counsellor.id %}">Edit Counsellor</a>
-            <a class="danger-link" href="{% url 'delete_counsellor' counsellor.id %}" onclick="return confirm('Delete this counsellor?')">Delete Counsellor</a>
+            <form method="post" action="{% url 'delete_counsellor' counsellor.id %}" class="inline-form" onsubmit="return confirm('Delete this counsellor?');">
+                {% csrf_token %}
+                <button type="submit" class="danger-link">Delete Counsellor</button>
+            </form>
             <a class="secondary-link" href="{% url 'counsellor_list' %}">Back to Counsellors</a>
         </div>
         <div class="stats-grid">

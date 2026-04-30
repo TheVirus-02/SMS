@@ -41,11 +41,20 @@
             {% for schedule in schedules %}
             <tr>
                 <td>{{ schedule.center.name|default:"Center Pending" }}</td>
-                <td><a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a></td>
+                <td>
+                    {% if portal_is_admin %}
+                    <a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a>
+                    {% else %}
+                    {{ schedule.trainer.name }}
+                    {% endif %}
+                </td>
                 <td>{{ schedule.start_time|time:"h:i A" }} - {{ schedule.end_time|time:"h:i A" }}</td>
                 <td>
                     <a href="{% url 'update_batch_assignment' schedule.id %}">Edit</a> |
-                    <a href="{% url 'delete_batch_assignment' schedule.id %}" onclick="return confirm('Delete this batch allocation?')">Delete</a>
+                    <form method="post" action="{% url 'delete_batch_assignment' schedule.id %}" class="inline-form" onsubmit="return confirm('Delete this batch allocation?');">
+                        {% csrf_token %}
+                        <button type="submit">Delete</button>
+                    </form>
                 </td>
             </tr>
             {% empty %}

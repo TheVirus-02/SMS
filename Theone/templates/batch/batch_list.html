@@ -70,7 +70,11 @@
                             <div class="grid-stack">
                                 {% for schedule in cell.schedules %}
                                 <div class="grid-entry">
+                                    {% if portal_is_admin %}
                                     <a href="{% url 'trainer_detail' schedule.trainer.id %}">{{ schedule.trainer.name }}</a>
+                                    {% else %}
+                                    <span>{{ schedule.trainer.name }}</span>
+                                    {% endif %}
                                     <div class="css-inline-7">{{ cell.center.name }}</div>
                                 </div>
                                 {% empty %}
@@ -131,7 +135,10 @@
                         <td>
                             <a href="{% url 'batch_detail' batch.id %}">Open</a> |
                             <a href="{% url 'update_batch' batch.id %}">Edit</a> |
-                            <a href="{% url 'delete_batch' batch.id %}" onclick="return confirm('Delete this batch?')">Delete</a>
+                            <form method="post" action="{% url 'delete_batch' batch.id %}" class="inline-form" onsubmit="return confirm('Delete this batch?');">
+                                {% csrf_token %}
+                                <button type="submit">Delete</button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}

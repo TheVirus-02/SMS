@@ -19,6 +19,9 @@
         <aside class="sidebar" id="portalSidebar">
             <div class="brand-block">
                 <h1 class="brand-title">MATRIX</h1>
+                <div class="brand-logo-wrap">
+                    <img class="brand-logo" src="{% static 'images/matrix-dashboard-banner.png' %}" alt="Matrix Computer Education">
+                </div>
                 <p class="brand-subtitle">Student management system built for admissions, batches, fees, exams, and institute operations.</p>
             </div>
 
@@ -127,6 +130,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const minSidebarWidth = 240;
     const maxSidebarWidth = 420;
     const savedSidebarWidth = window.localStorage.getItem('matrix-sidebar-width');
+    const restorePageState = function () {
+        if (!pageContent) {
+            return;
+        }
+        pageContent.classList.remove('is-leaving');
+    };
 
     const closeMobileNav = function () {
         document.body.classList.remove('nav-open');
@@ -134,6 +143,15 @@ document.addEventListener('DOMContentLoaded', function () {
             mobileNavToggle.setAttribute('aria-expanded', 'false');
         }
     };
+
+    restorePageState();
+
+    window.addEventListener('pageshow', function () {
+        restorePageState();
+        closeMobileNav();
+    });
+
+    window.addEventListener('beforeunload', restorePageState);
 
     if (savedSidebarWidth && window.innerWidth > 900) {
         root.style.setProperty('--sidebar-width', savedSidebarWidth + 'px');
@@ -253,6 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             event.preventDefault();
+            restorePageState();
             pageContent.classList.add('is-leaving');
             window.setTimeout(function () {
                 window.location.href = targetUrl.href;

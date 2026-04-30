@@ -27,11 +27,11 @@
         <div class="form-grid">
             <div class="field-group full">
                 <label for="name">Course Name</label>
-                <input id="name" type="text" name="name" value="{{ selected_name|default:course.name|default:'' }}" required>
+                <input id="name" type="text" name="name" value="{% if course %}{{ selected_name|default:course.name|default:'' }}{% else %}{{ selected_name|default:'' }}{% endif %}" required>
             </div>
             <div class="field-group full">
                 <label for="description">Course Description</label>
-                <textarea id="description" name="description" placeholder="Add a short course description, syllabus summary, or key learning outcome">{{ selected_description|default:course.description|default:'' }}</textarea>
+                <textarea id="description" name="description" placeholder="Add a short course description, syllabus summary, or key learning outcome">{% if course %}{{ selected_description|default:course.description|default:'' }}{% else %}{{ selected_description|default:'' }}{% endif %}</textarea>
             </div>
             <div class="field-group full">
                 <label>Select Trainers</label>

@@ -118,7 +118,9 @@
         <div class="actions-row">
             <button class="action-btn" type="submit">Apply Filters</button>
             <a class="clear-link" href="{% url 'record' %}">Clear Filters</a>
+            {% if can_manage_fees %}
             <a class="clear-link" href="{% url 'export_student_records_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+            {% endif %}
         </div>
     </form>
 
@@ -171,8 +173,12 @@
                         <div class="actions-row css-inline-3">
                             <a class="mini-action" href="{% url 'student_detail' student.id %}">View</a>
                             <a class="mini-action" href="{% url 'update_student' student.id %}">Edit</a>
+                            {% if can_manage_fees %}
                             <a class="mini-action" href="{% url 'add_installment' student.id %}">Installment</a>
+                            {% endif %}
+                            {% if can_view_exams %}
                             <a class="mini-action" href="{% url 'register_exam' student.id %}">Exam</a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

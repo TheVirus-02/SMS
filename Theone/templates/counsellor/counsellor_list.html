@@ -102,7 +102,10 @@
                 <td>
                     <a href="{% url 'counsellor_detail' counsellor.id %}">Open</a> |
                     <a href="{% url 'update_counsellor' counsellor.id %}">Edit</a> |
-                    <a href="{% url 'delete_counsellor' counsellor.id %}" onclick="return confirm('Delete this counsellor?')">Delete</a>
+                    <form method="post" action="{% url 'delete_counsellor' counsellor.id %}" class="inline-form" onsubmit="return confirm('Delete this counsellor?');">
+                        {% csrf_token %}
+                        <button type="submit">Delete</button>
+                    </form>
                 </td>
             </tr>
             {% empty %}

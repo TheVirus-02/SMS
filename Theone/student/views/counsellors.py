@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from student.models import Center, Counsellor, Enquiry, Student
 from student.portal import ROLE_ADMIN, ROLE_COUNSELLOR, get_counsellor_for_user_or_404, get_portal_role, role_required
@@ -182,6 +183,7 @@ def update_counsellor(request, id):
 
 
 @role_required(ROLE_ADMIN)
+@require_POST
 def delete_counsellor(request, id):
     counsellor = get_object_or_404(Counsellor, id=id)
     counsellor_name = counsellor.name

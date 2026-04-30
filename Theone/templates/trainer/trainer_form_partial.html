@@ -18,18 +18,18 @@
         <div class="form-grid">
             <div class="field-group">
                 <label for="name">Trainer Name</label>
-                <input id="name" type="text" name="name" value="{{ form_data.name|default:trainer.name|default:'' }}" required>
+                <input id="name" type="text" name="name" value="{% if trainer %}{{ form_data.name|default:trainer.name|default:'' }}{% else %}{{ form_data.name|default:'' }}{% endif %}" required>
             </div>
             <div class="field-group">
                 <label for="mobile">Mobile Number</label>
-                <input id="mobile" type="text" name="mobile" value="{{ form_data.mobile|default:trainer.mobile|default:'' }}" required>
+                <input id="mobile" type="text" name="mobile" value="{% if trainer %}{{ form_data.mobile|default:trainer.mobile|default:'' }}{% else %}{{ form_data.mobile|default:'' }}{% endif %}" required>
             </div>
             <div class="field-group">
                 <label for="user">Login User</label>
                 <select id="user" name="user">
                     <option value="">No login linked</option>
                     {% for user in users %}
-                    <option value="{{ user.id }}" {% if trainer.user_id == user.id or form_data.user_id == user.id|stringformat:"s" %}selected{% endif %}>{{ user.username }}</option>
+                    <option value="{{ user.id }}" {% if form_data.user_id == user.id|stringformat:"s" or trainer and trainer.user_id == user.id %}selected{% endif %}>{{ user.username }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -43,15 +43,15 @@
             </div>
             <div class="field-group">
                 <label for="age">Age</label>
-                <input id="age" type="number" name="age" value="{{ form_data.age|default:trainer.age|default:'' }}">
+                <input id="age" type="number" name="age" value="{% if trainer %}{{ form_data.age|default:trainer.age|default:'' }}{% else %}{{ form_data.age|default:'' }}{% endif %}">
             </div>
             <div class="field-group">
                 <label for="dob">Date of Birth</label>
-                <input id="dob" type="date" name="dob" value="{{ form_data.dob|default:trainer.dob|date:'Y-m-d' }}">
+                <input id="dob" type="date" name="dob" value="{% if trainer %}{{ form_data.dob|default:trainer.dob|date:'Y-m-d' }}{% else %}{{ form_data.dob|default:'' }}{% endif %}">
             </div>
             <div class="field-group">
                 <label for="joining_date">Joining Date</label>
-                <input id="joining_date" type="date" name="joining_date" value="{{ form_data.joining_date|default:trainer.joining_date|date:'Y-m-d' }}">
+                <input id="joining_date" type="date" name="joining_date" value="{% if trainer %}{{ form_data.joining_date|default:trainer.joining_date|date:'Y-m-d' }}{% else %}{{ form_data.joining_date|default:'' }}{% endif %}">
             </div>
             <div class="field-group full">
                 <label>Courses</label>

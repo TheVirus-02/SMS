@@ -87,7 +87,10 @@
                 <td>{{ schedule.start_time|time:"h:i A" }} - {{ schedule.end_time|time:"h:i A" }}</td>
                 <td>
                     <a href="{% url 'update_schedule' schedule.id %}">Edit</a> |
-                    <a href="{% url 'delete_schedule' schedule.id %}" onclick="return confirm('Delete this schedule?')">Delete</a>
+                    <form method="post" action="{% url 'delete_schedule' schedule.id %}" class="inline-form" onsubmit="return confirm('Delete this schedule?');">
+                        {% csrf_token %}
+                        <button type="submit">Delete</button>
+                    </form>
                 </td>
             </tr>
             {% empty %}

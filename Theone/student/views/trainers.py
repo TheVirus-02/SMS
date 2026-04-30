@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from student.models import Batch, Center, Course, Student, Trainer, TrainerSchedule
 from student.portal import ROLE_ADMIN, ROLE_TRAINER, get_portal_role, get_trainer_for_user_or_404, role_required
@@ -129,6 +130,7 @@ def update_trainer(request, id):
 
 
 @role_required(ROLE_ADMIN)
+@require_POST
 def delete_trainer(request, id):
     trainer = get_object_or_404(Trainer, id=id)
     trainer_name = trainer.name
@@ -267,6 +269,7 @@ def update_schedule(request, id):
 
 
 @role_required(ROLE_ADMIN)
+@require_POST
 def delete_schedule(request, id):
     schedule = get_object_or_404(TrainerSchedule.objects.select_related("trainer"), id=id)
     messages.success(request, "Schedule deleted successfully.")
