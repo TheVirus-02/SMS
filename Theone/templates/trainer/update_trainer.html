@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/trainer/trainer_form_partial.css' %}">
+{% endblock %}
 
 {% block content %}
 {% include 'trainer/trainer_form_partial.html' with page_title='Update Trainer' submit_label='Update Trainer' back_url_name='trainer_detail' back_id=trainer.id %}

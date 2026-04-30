@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/portal/trainer_dashboard.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page-shell">
+    <div class="hero-card css-inline-1">
+        <h2 class="css-inline-2">Trainer Dashboard</h2>
+        <p class="css-inline-3">This dashboard only shows your assigned students, your attendance work, and your center logistics view.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="metric-box">Students<strong>{{ student_count }}</strong></div>
+        <div class="metric-box">Active Students<strong>{{ active_students }}</strong></div>
+        <div class="metric-box">Pending Fee View<strong>{{ pending_fee_total }}</strong></div>
+        <div class="metric-box">Present Today<strong>{{ present_count }}</strong></div>
+        <div class="metric-box">Absent Today<strong>{{ absent_count }}</strong></div>
+        <div class="metric-box">Leave Today<strong>{{ leave_count }}</strong></div>
+    </div>
+
+    <div class="panel-grid">
+        <div class="table-card css-inline-1">
+            <h3 class="css-inline-4">My Students</h3>
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead><tr><th>Student</th><th>Center</th><th>Batch</th><th>Remaining Fee</th></tr></thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td><a href="{% url 'student_detail' student.id %}">{{ student.name }}</a></td>
+                            <td>{{ student.center.name|default:"-" }}</td>
+                            <td>{{ student.batch|default:"-" }}</td>
+                            <td>{{ student.remaining_fee }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4">No assigned students found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-card css-inline-1">
+            <h3 class="css-inline-4">My Batches</h3>
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead><tr><th>Batch</th><th>Center</th></tr></thead>
+                    <tbody>
+                        {% for schedule in batches %}
+                        <tr>
+                            <td>{{ schedule.batch }}</td>
+                            <td>{{ schedule.center.name|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2">No batch allocations found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

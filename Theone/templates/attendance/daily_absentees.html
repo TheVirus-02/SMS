@@ -1,25 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/attendance/daily_absentees.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
-    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-    th { background:var(--surface-muted); }
-    .meta { color:var(--text-muted); }
-</style>
+
 
 <div class="page-shell">
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Daily Absentees</h2>
-        <p style="margin:0;">Track students absent on {{ selected_date }}.</p>
+        <h2 class="css-inline-1">Daily Absentees</h2>
+        <p class="css-inline-2">Track students absent on {{ selected_date }}.</p>
         <div class="actions-row">
             <a class="secondary-link" href="{% url 'attendance_batches' %}">Back to Attendance</a>
             <a class="secondary-link" href="{% url 'attendance_monthly_summary' %}">Monthly Summary</a>
@@ -36,7 +28,7 @@
     </form>
 
     <div class="table-card">
-        <div class="meta" style="margin-bottom:14px;">Total Absentees: {{ total_absentees }}</div>
+        <div class="meta css-inline-3">Total Absentees: {{ total_absentees }}</div>
         <table>
             <tr><th>Student</th><th>Center / Batch</th><th>Trainer</th><th>Remarks</th></tr>
             {% for record in records %}

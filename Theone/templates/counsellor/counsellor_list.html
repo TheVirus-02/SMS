@@ -1,26 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/counsellor/counsellor_list.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
-    .stat-box { background:rgba(255, 255, 255, 0.14); border-radius:14px; padding:14px; }
-    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
-    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; cursor:pointer; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) minmax(180px, 220px) auto auto; gap:12px; align-items:end; }
-    label { display:block; font-weight:600; margin-bottom:6px; color:var(--brand-black); }
-    input, select { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-    th { background:var(--surface-muted); }
-    .meta { color:var(--text-muted); }
-    @media (max-width:900px) { .filter-grid { grid-template-columns:1fr; } }
-</style>
+
 
 <div class="page-shell">
     {% if messages %}
@@ -30,8 +16,8 @@
     {% endif %}
 
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Counsellor Management</h2>
-        <p style="margin:0;">Manage counsellor profiles, center assignment, and student follow-up records from one place.</p>
+        <h2 class="css-inline-1">Counsellor Management</h2>
+        <p class="css-inline-2">Manage counsellor profiles, center assignment, and student follow-up records from one place.</p>
         <div class="action-row">
             <a class="btn" href="{% url 'add_counsellor' %}">Add Counsellor</a>
         </div>
@@ -86,8 +72,8 @@
     </form>
 
     <div class="table-card">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-            <h3 style="margin:0;">All Counsellors</h3>
+        <div class="css-inline-3">
+            <h3 class="css-inline-2">All Counsellors</h3>
             <div class="meta">Total Counsellors: {{ total_counsellors }}</div>
         </div>
         <table>

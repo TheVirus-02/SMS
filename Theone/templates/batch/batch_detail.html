@@ -1,24 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/batch/batch_detail.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .panel-card, .message-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .message-card { background:var(--surface-muted); border-left:4px solid var(--brand-black); }
-    .stats-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; }
-    .stat-pill { background:rgba(255,255,255,0.18); color:#fff; border-radius:999px; padding:8px 14px; font-weight:700; }
-    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
-    .btn { background:var(--brand-black); color:#fff; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .danger-link { background:#fff0f0; color:#b23a3a; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
-    th { background:var(--surface-muted); }
-    .center-card { border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--surface-muted); }
-    .center-card + .center-card { margin-top:12px; }
-</style>
+
 
 <div class="page-shell">
     {% if messages %}
@@ -28,8 +16,8 @@
     {% endif %}
 
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">{{ batch }}</h2>
-        <p style="margin:0;">Manage batch details and trainer-center allocations from one place.</p>
+        <h2 class="css-inline-1">{{ batch }}</h2>
+        <p class="css-inline-2">Manage batch details and trainer-center allocations from one place.</p>
         <div class="stats-row">
             <span class="stat-pill">{{ schedules|length }} Allocation{{ schedules|length|pluralize }}</span>
             <span class="stat-pill">{{ students|length }} Student{{ students|length|pluralize }}</span>
@@ -42,7 +30,7 @@
     </div>
 
     <div class="panel-card">
-        <h3 style="margin-top:0;">Trainer-Center Allocations</h3>
+        <h3 class="css-inline-3">Trainer-Center Allocations</h3>
         <table>
             <tr>
                 <th>Center</th>
@@ -69,12 +57,12 @@
     </div>
 
     <div class="panel-card">
-        <h3 style="margin-top:0;">Center Summary</h3>
+        <h3 class="css-inline-3">Center Summary</h3>
         {% for item in center_summary %}
         <div class="center-card">
             <strong>{{ item.center.name }}</strong>
-            <div style="margin-top:6px;">Students: {{ item.student_count }}</div>
-            <div style="margin-top:6px;">
+            <div class="css-inline-4">Students: {{ item.student_count }}</div>
+            <div class="css-inline-4">
                 Trainers:
                 {% for schedule in item.schedules %}
                     {{ schedule.trainer.name }}{% if not forloop.last %}, {% endif %}
@@ -84,7 +72,7 @@
             </div>
         </div>
         {% empty %}
-        <p style="margin:0;">No student or trainer allocation is attached to this batch yet.</p>
+        <p class="css-inline-2">No student or trainer allocation is attached to this batch yet.</p>
         {% endfor %}
     </div>
 </div>

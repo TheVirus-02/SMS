@@ -1,9 +1,11 @@
 from datetime import date
 from unittest.mock import MagicMock, patch
 
+from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
 
-from .models import CommunicationLog, Course, Enquiry, ExamRegistration, SmsLog, Student, StudentCourse
+from .models import Center, CommunicationLog, Counsellor, Course, Enquiry, ExamRegistration, SmsLog, Student, StudentCourse
 from .sms import (
     build_enquiry_follow_up_message,
     build_exam_registration_message,
@@ -124,3 +126,101 @@ class SmsLogTests(TestCase):
         log = CommunicationLog.objects.get(category=CommunicationLog.CATEGORY_ENQUIRY_FOLLOW_UP)
         self.assertEqual(log.enquiry, self.enquiry)
         self.assertEqual(log.phone_number, "+9123456789")
+
+
+class AutomationPermissionTests(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.admin_user = user_model.objects.create_user(
+            username="admin",
+            password="pass1234",
+            is_staff=True,
+        )
+        self.counsellor_user = user_model.objects.create_user(
+            username="counsellor",
+            password="pass1234",
+        )
+        self.center = Center.objects.create(name="Main Center")
+        self.counsellor = Counsellor.objects.create(
+            user=self.counsellor_user,
+            name="Counsellor One",
+            center=self.center,
+        )
+
+    def test_counsellor_cannot_access_automation_dashboard(self):
+        self.client.force_login(self.counsellor_user)
+
+        response = self.client.get(reverse("reminder_center"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("counsellor_dashboard"))
+
+    def test_counsellor_cannot_trigger_fee_reminder(self):
+        self.client.force_login(self.counsellor_user)
+        student = Student.objects.create(
+            name="Blocked Student",
+            mobile_no="9876543210",
+            joining_date=date(2026, 4, 1),
+            course_fee=1000,
+            paid_fee=0,
+        )
+
+        response = self.client.post(reverse("send_fee_reminder", args=[student.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("counsellor_dashboard"))
+        self.assertFalse(CommunicationLog.objects.exists())
+
+    def test_admin_can_access_automation_dashboard(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("reminder_center"))
+
+        self.assertEqual(response.status_code, 200)
+
+    @override_settings(SMS_ENABLED=False, SMS_PROVIDER="twilio", SMS_DEFAULT_COUNTRY_CODE="+91")
+    def test_counsellor_with_fee_permission_can_access_dashboard_and_send_fee_reminder(self):
+        self.counsellor.can_send_fee_reminders = True
+        self.counsellor.save(update_fields=["can_send_fee_reminders"])
+        self.client.force_login(self.counsellor_user)
+        student = Student.objects.create(
+            name="Allowed Student",
+            mobile_no="9876543210",
+            joining_date=date(2026, 4, 1),
+            course_fee=1000,
+            paid_fee=0,
+            center=self.center,
+            counsellor=self.counsellor,
+        )
+
+        dashboard_response = self.client.get(reverse("reminder_center"))
+        send_response = self.client.post(reverse("send_fee_reminder", args=[student.id]))
+
+        self.assertEqual(dashboard_response.status_code, 200)
+        self.assertContains(dashboard_response, "Bulk Fee Reminders")
+        self.assertNotContains(dashboard_response, "Bulk Follow-Up Reminders")
+        self.assertEqual(send_response.status_code, 302)
+        self.assertRedirects(send_response, reverse("reminder_center"))
+        log = CommunicationLog.objects.get(category=CommunicationLog.CATEGORY_FEE_REMINDER)
+        self.assertEqual(log.student, student)
+
+    @override_settings(SMS_ENABLED=False, SMS_PROVIDER="twilio", SMS_DEFAULT_COUNTRY_CODE="+91")
+    def test_counsellor_with_follow_up_permission_can_send_follow_up_reminder(self):
+        self.counsellor.can_send_follow_up_reminders = True
+        self.counsellor.save(update_fields=["can_send_follow_up_reminders"])
+        self.client.force_login(self.counsellor_user)
+        enquiry = Enquiry.objects.create(
+            name="Follow Up Lead",
+            mobile_no="9123456789",
+            enquiry_date=date(2026, 4, 10),
+            next_follow_up_date=date(2026, 4, 26),
+            assigned_counsellor=self.counsellor,
+            preferred_center=self.center,
+        )
+
+        response = self.client.post(reverse("send_enquiry_follow_up_reminder", args=[enquiry.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("reminder_center"))
+        log = CommunicationLog.objects.get(category=CommunicationLog.CATEGORY_ENQUIRY_FOLLOW_UP)
+        self.assertEqual(log.enquiry, enquiry)

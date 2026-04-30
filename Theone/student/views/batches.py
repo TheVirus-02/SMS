@@ -7,15 +7,27 @@ from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import Batch, Center, Student, Trainer, TrainerSchedule
+from student.portal import (
+    ROLE_ADMIN,
+    ROLE_COUNSELLOR,
+    get_batch_for_user_or_404,
+    role_required,
+    scope_batches_for_user,
+    scope_centers_for_user,
+    scope_students_for_user,
+    scope_trainers_for_user,
+)
 
 
 STANDARD_BATCH_HOURS = range(7, 21)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def batch_list(request):
     query = request.GET.get("q", "").strip()
-    centers = list(Center.objects.all().order_by("name"))
-    batches = (
+    centers = list(scope_centers_for_user(request.user, Center.objects.all()).order_by("name"))
+    batches = scope_batches_for_user(
+        request.user,
         Batch.objects.annotate(
             student_count=Count("student", distinct=True),
             schedule_count=Count("trainerschedule", distinct=True),
@@ -28,8 +40,7 @@ def batch_list(request):
                 ),
             )
         )
-        .order_by("time", "name")
-    )
+    ).order_by("time", "name")
     batches = list(batches)
     if query:
         normalized_query = query.lower()
@@ -75,22 +86,26 @@ def batch_list(request):
             "grid_rows": grid_rows,
             "query": query,
             "total_batches": len(batches),
-            "total_students": Student.objects.filter(batch__isnull=False).count(),
+            "total_students": scope_students_for_user(request.user, Student.objects.filter(batch__isnull=False)).count(),
         },
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def batch_detail(request, id):
-    batch = get_object_or_404(Batch, id=id)
+    batch = get_batch_for_user_or_404(request.user, id)
     schedules = TrainerSchedule.objects.select_related("trainer", "center").filter(batch=batch).order_by(
         "center__name", "trainer__name"
     )
-    students = Student.objects.select_related("trainer", "center").filter(batch=batch).order_by(
+    students = scope_students_for_user(
+        request.user,
+        Student.objects.select_related("trainer", "center").filter(batch=batch),
+    ).order_by(
         "center__name", "name"
     )
 
     center_summary = []
-    for center in Center.objects.order_by("name"):
+    for center in scope_centers_for_user(request.user, Center.objects.all()).order_by("name"):
         center_students = [student for student in students if student.center_id == center.id]
         center_schedules = [schedule for schedule in schedules if schedule.center_id == center.id]
         if center_students or center_schedules:
@@ -115,24 +130,27 @@ def batch_detail(request, id):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def add_batch(request):
-    context = build_batch_form_context()
+    context = build_batch_form_context(request)
     if request.method == "POST":
         return save_batch_form(request, context)
     return render(request, "batch/batch_form.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def update_batch(request, id):
-    batch = get_object_or_404(Batch, id=id)
-    context = build_batch_form_context(batch=batch)
+    batch = get_batch_for_user_or_404(request.user, id)
+    context = build_batch_form_context(request, batch=batch)
     if request.method == "POST":
         return save_batch_form(request, context, batch=batch)
     return render(request, "batch/batch_form.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def delete_batch(request, id):
-    batch = get_object_or_404(Batch, id=id)
-    assigned_student_count = Student.objects.filter(batch=batch).count()
+    batch = get_batch_for_user_or_404(request.user, id)
+    assigned_student_count = scope_students_for_user(request.user, Student.objects.filter(batch=batch)).count()
     if assigned_student_count:
         messages.error(
             request,
@@ -145,30 +163,36 @@ def delete_batch(request, id):
     return redirect("batch_list")
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def add_batch_assignment(request, batch_id):
-    batch = get_object_or_404(Batch, id=batch_id)
-    context = build_assignment_form_context(batch=batch)
+    batch = get_batch_for_user_or_404(request.user, batch_id)
+    context = build_assignment_form_context(request, batch=batch)
     if request.method == "POST":
         return save_batch_assignment_form(request, context, batch=batch)
     return render(request, "batch/assignment_form.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def update_batch_assignment(request, id):
     schedule = get_object_or_404(TrainerSchedule.objects.select_related("batch"), id=id)
-    context = build_assignment_form_context(batch=schedule.batch, schedule=schedule)
+    get_batch_for_user_or_404(request.user, schedule.batch_id)
+    context = build_assignment_form_context(request, batch=schedule.batch, schedule=schedule)
     if request.method == "POST":
         return save_batch_assignment_form(request, context, batch=schedule.batch, schedule=schedule)
     return render(request, "batch/assignment_form.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def delete_batch_assignment(request, id):
     schedule = get_object_or_404(TrainerSchedule.objects.select_related("batch"), id=id)
+    get_batch_for_user_or_404(request.user, schedule.batch_id)
     batch_id = schedule.batch_id
     schedule.delete()
     messages.success(request, "Batch trainer allocation deleted successfully.")
     return redirect("batch_detail", id=batch_id)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def create_standard_batches(request):
     if request.method != "POST":
         return redirect("batch_list")
@@ -188,7 +212,7 @@ def create_standard_batches(request):
     return redirect("batch_list")
 
 
-def build_batch_form_context(batch=None, error=None, form_data=None):
+def build_batch_form_context(request, batch=None, error=None, form_data=None):
     form_data = form_data or {}
     initial_schedule = None
     if batch:
@@ -199,8 +223,8 @@ def build_batch_form_context(batch=None, error=None, form_data=None):
     return {
         "batch": batch,
         "error": error or [],
-        "trainers": Trainer.objects.all().order_by("name"),
-        "centers": Center.objects.all().order_by("name"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
         "selected_name": form_data.get("name", batch.name if batch else ""),
         "selected_time": form_data.get("time", format_time_input(batch.time) if batch else ""),
         "selected_trainer_id": form_data.get(
@@ -214,14 +238,14 @@ def build_batch_form_context(batch=None, error=None, form_data=None):
     }
 
 
-def build_assignment_form_context(batch, schedule=None, error=None, form_data=None):
+def build_assignment_form_context(request, batch, schedule=None, error=None, form_data=None):
     form_data = form_data or {}
     return {
         "batch": batch,
         "schedule": schedule,
         "error": error or [],
-        "trainers": Trainer.objects.all().order_by("name"),
-        "centers": Center.objects.all().order_by("name"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
         "selected_trainer_id": form_data.get(
             "trainer",
             str(schedule.trainer_id) if schedule else "",
@@ -245,7 +269,7 @@ def save_batch_form(request, context, batch=None):
         batch_time = parse_batch_time(form_data["time"])
         validate_batch_form(form_data, batch_time, batch=batch)
     except ValidationError as exc:
-        context.update(build_batch_form_context(batch=batch, error=exc.messages, form_data=form_data))
+        context.update(build_batch_form_context(request, batch=batch, error=exc.messages, form_data=form_data))
         return render(request, "batch/batch_form.html", context)
 
     created = batch is None
@@ -273,7 +297,7 @@ def save_batch_form(request, context, batch=None):
                         trainer_id=trainer_id,
                     )
     except ValidationError as exc:
-        context.update(build_batch_form_context(batch=batch, error=exc.messages, form_data=form_data))
+        context.update(build_batch_form_context(request, batch=batch, error=exc.messages, form_data=form_data))
         return render(request, "batch/batch_form.html", context)
 
     if created:
@@ -299,7 +323,7 @@ def save_batch_assignment_form(request, context, batch, schedule=None):
         schedule.center_id = form_data["center"]
         schedule.save()
     except ValidationError as exc:
-        context.update(build_assignment_form_context(batch=batch, schedule=schedule, error=exc.messages, form_data=form_data))
+        context.update(build_assignment_form_context(request, batch=batch, schedule=schedule, error=exc.messages, form_data=form_data))
         return render(request, "batch/assignment_form.html", context)
 
     messages.success(

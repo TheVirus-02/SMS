@@ -7,11 +7,13 @@ from .urls.enquiries import urlpatterns as enquiry_urlpatterns
 from .urls.exams import urlpatterns as exam_urlpatterns
 from .urls.installments import urlpatterns as installment_urlpatterns
 from .urls.logistics import urlpatterns as logistics_urlpatterns
+from .urls.portal import urlpatterns as portal_urlpatterns
 from .urls.students import urlpatterns as student_urlpatterns
 from .urls.trainers import urlpatterns as trainer_urlpatterns
 
 urlpatterns = (
-    dashboard_urlpatterns
+    portal_urlpatterns
+    + dashboard_urlpatterns
     + batch_urlpatterns
     + counsellor_urlpatterns
     + course_urlpatterns

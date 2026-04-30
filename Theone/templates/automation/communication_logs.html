@@ -1,22 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/automation/communication_logs.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
-    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .meta { color:var(--text-muted); }
-</style>
+
 
 <div class="page-shell">
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Communication Logs</h2>
-        <p style="margin:0;">Review reminder history, delivery outcomes, and skipped cases for staff follow-up.</p>
+        <h2 class="css-inline-1">Communication Logs</h2>
+        <p class="css-inline-2">Review reminder history, delivery outcomes, and skipped cases for staff follow-up.</p>
         <div class="actions-row">
             <a class="secondary-link" href="{% url 'reminder_center' %}">Reminder Center</a>
             <a class="secondary-link" href="{% url 'index' %}">Dashboard</a>

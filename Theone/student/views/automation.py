@@ -1,11 +1,28 @@
+from functools import wraps
 from datetime import date, timedelta
 
 from django.contrib import messages
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from student.models import Attendance, Center, CommunicationLog, Counsellor, Enquiry, Installment, Student, Trainer
+from student.portal import (
+    ROLE_ADMIN,
+    get_enquiry_for_user_or_404,
+    get_portal_role,
+    get_student_for_user_or_404,
+    portal_login_required,
+    portal_redirect_name,
+    role_required,
+    scope_centers_for_user,
+    scope_counsellors_for_user,
+    scope_enquiries_for_user,
+    scope_students_for_user,
+    user_can_access_reminder_center,
+    user_can_send_fee_reminders,
+    user_can_send_follow_up_reminders,
+)
 from student.sms import (
     build_enquiry_follow_up_message,
     build_fee_reminder_message,
@@ -14,38 +31,74 @@ from student.sms import (
 from student.views.helpers import build_sms_status_context
 
 
-def get_fee_students():
+def reminder_capability_required(capability_check):
+    def decorator(view_func):
+        @portal_login_required
+        @wraps(view_func)
+        def wrapped(request, *args, **kwargs):
+            if not capability_check(request.user):
+                messages.error(request, "You do not have access to that page.")
+                return redirect(portal_redirect_name(request.user))
+            return view_func(request, *args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+def get_fee_students(user):
     return list(
-        Student.objects.select_related("center", "trainer", "counsellor", "batch")
-        .prefetch_related("courses")
-        .filter(course_fee__gt=0)
+        scope_students_for_user(
+            user,
+            Student.objects.select_related("center", "trainer", "counsellor", "batch")
+            .prefetch_related("courses")
+            .filter(course_fee__gt=0),
+        )
         .order_by("joining_date", "name")
     )
 
 
-def get_pending_fee_students():
-    return [student for student in get_fee_students() if student.remaining_fee > 0]
+def get_pending_fee_students(user):
+    return [student for student in get_fee_students(user) if student.remaining_fee > 0]
 
 
-def get_follow_up_enquiries():
+def get_follow_up_enquiries(user):
     return list(
-        Enquiry.objects.select_related(
-            "interested_course", "preferred_center", "preferred_batch", "assigned_counsellor"
+        scope_enquiries_for_user(
+            user,
+            Enquiry.objects.select_related(
+                "interested_course", "preferred_center", "preferred_batch", "assigned_counsellor"
+            ),
         )
         .exclude(status__in=["admitted", "lost"])
         .order_by("next_follow_up_date", "name")
     )
 
 
-def build_reminder_context():
+def build_recent_communication_logs(user):
+    role = get_portal_role(user)
+    logs_qs = CommunicationLog.objects.select_related("student", "enquiry")
+    if role == ROLE_ADMIN:
+        return list(logs_qs[:20])
+
+    student_ids = list(scope_students_for_user(user, Student.objects.all()).values_list("id", flat=True))
+    enquiry_ids = list(scope_enquiries_for_user(user, Enquiry.objects.all()).values_list("id", flat=True))
+    if not student_ids and not enquiry_ids:
+        return []
+    return list(logs_qs.filter(Q(student_id__in=student_ids) | Q(enquiry_id__in=enquiry_ids))[:20])
+
+
+def build_reminder_context(request):
     today = date.today()
     due_cutoff = today - timedelta(days=30)
+    can_send_fee = user_can_send_fee_reminders(request.user)
+    can_send_follow_up = user_can_send_follow_up_reminders(request.user)
 
-    fee_students = get_pending_fee_students()
+    fee_students = get_pending_fee_students(request.user) if can_send_fee else []
     overdue_students = [student for student in fee_students if student.joining_date and student.joining_date <= due_cutoff]
     no_payment_students = [student for student in fee_students if student.total_paid == 0]
 
-    follow_up_enquiries = get_follow_up_enquiries()
+    follow_up_enquiries = get_follow_up_enquiries(request.user) if can_send_follow_up else []
     today_follow_ups = [enquiry for enquiry in follow_up_enquiries if enquiry.next_follow_up_date == today]
     overdue_follow_ups = [
         enquiry for enquiry in follow_up_enquiries if enquiry.next_follow_up_date and enquiry.next_follow_up_date < today
@@ -64,24 +117,33 @@ def build_reminder_context():
         "today_follow_ups": today_follow_ups[:20],
         "overdue_follow_ups": overdue_follow_ups[:20],
         "stale_enquiries": stale_enquiries[:20],
-        "recent_logs": CommunicationLog.objects.select_related("student", "enquiry")[:20],
+        "recent_logs": build_recent_communication_logs(request.user),
         "sms_status": build_sms_status_context(),
         "pending_fee_alert_count": len(fee_students),
         "overdue_fee_alert_count": len(overdue_students),
         "today_follow_up_alert_count": len(today_follow_ups),
         "overdue_follow_up_alert_count": len(overdue_follow_ups),
-        "centers": Center.objects.order_by("name"),
-        "counsellors": Counsellor.objects.select_related("center").order_by("name"),
+        "centers": scope_centers_for_user(request.user, Center.objects.order_by("name")),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center").order_by("name")),
+        "can_send_fee_reminders": can_send_fee,
+        "can_send_follow_up_reminders": can_send_follow_up,
+        "is_admin_automation_user": get_portal_role(request.user) == ROLE_ADMIN,
     }
 
 
+@reminder_capability_required(user_can_access_reminder_center)
 def reminder_center(request):
-    return render(request, "automation/reminder_center.html", build_reminder_context())
+    return render(request, "automation/reminder_center.html", build_reminder_context(request))
 
 
+@reminder_capability_required(user_can_send_fee_reminders)
 @require_POST
 def send_fee_reminder(request, student_id):
-    student = get_object_or_404(Student.objects.prefetch_related("courses"), id=student_id)
+    student = get_student_for_user_or_404(
+        request.user,
+        student_id,
+        Student.objects.prefetch_related("courses"),
+    )
     message_body = build_fee_reminder_message(student)
     result = send_general_sms(
         student=student,
@@ -97,11 +159,13 @@ def send_fee_reminder(request, student_id):
     return redirect("reminder_center")
 
 
+@reminder_capability_required(user_can_send_follow_up_reminders)
 @require_POST
 def send_enquiry_follow_up_reminder(request, enquiry_id):
-    enquiry = get_object_or_404(
+    enquiry = get_enquiry_for_user_or_404(
+        request.user,
+        enquiry_id,
         Enquiry.objects.select_related("interested_course", "preferred_center", "assigned_counsellor"),
-        id=enquiry_id,
     )
     message_body = build_enquiry_follow_up_message(enquiry)
     result = send_general_sms(
@@ -118,13 +182,14 @@ def send_enquiry_follow_up_reminder(request, enquiry_id):
     return redirect("reminder_center")
 
 
+@reminder_capability_required(user_can_send_fee_reminders)
 @require_POST
 def send_bulk_fee_reminders(request):
     today = date.today()
     center_id = (request.POST.get("center") or "").strip()
     reminder_scope = (request.POST.get("scope") or "overdue").strip()
 
-    students = get_pending_fee_students()
+    students = get_pending_fee_students(request.user)
     if center_id:
         students = [student for student in students if str(student.center_id or "") == center_id]
     if reminder_scope == "overdue":
@@ -155,13 +220,14 @@ def send_bulk_fee_reminders(request):
     return redirect("reminder_center")
 
 
+@reminder_capability_required(user_can_send_follow_up_reminders)
 @require_POST
 def send_bulk_follow_up_reminders(request):
     today = date.today()
     counsellor_id = (request.POST.get("counsellor") or "").strip()
     reminder_scope = (request.POST.get("scope") or "overdue").strip()
 
-    enquiries = get_follow_up_enquiries()
+    enquiries = get_follow_up_enquiries(request.user)
     if counsellor_id:
         enquiries = [enquiry for enquiry in enquiries if str(enquiry.assigned_counsellor_id or "") == counsellor_id]
     if reminder_scope == "today":
@@ -194,6 +260,7 @@ def send_bulk_follow_up_reminders(request):
     return redirect("reminder_center")
 
 
+@role_required(ROLE_ADMIN)
 def communication_log_list(request):
     category = request.GET.get("category", "").strip()
     status = request.GET.get("status", "").strip()
@@ -215,6 +282,7 @@ def communication_log_list(request):
     )
 
 
+@role_required(ROLE_ADMIN)
 def daily_summary(request):
     selected_date = request.GET.get("date", "").strip()
     try:
@@ -264,6 +332,7 @@ def daily_summary(request):
     )
 
 
+@role_required(ROLE_ADMIN)
 def staff_center_analytics(request):
     today = date.today()
     date_from_value = (request.GET.get("date_from") or "").strip()

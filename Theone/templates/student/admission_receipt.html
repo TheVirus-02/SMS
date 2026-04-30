@@ -1,25 +1,18 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/student/admission_receipt.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .receipt-shell { max-width: 860px; margin: 0 auto; display:grid; gap:20px; }
-    .receipt-card { background:#fff; border-radius:18px; padding:28px; box-shadow:0 10px 30px rgba(0,0,0,0.08); border:1px solid var(--border); }
-    .receipt-head { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px; border-bottom:2px solid var(--border); padding-bottom:16px; }
-    .receipt-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px; }
-    .receipt-box { background:var(--surface-muted); border:1px solid var(--border); border-radius:14px; padding:14px; }
-    .amount-box { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; border-radius:16px; padding:18px; text-align:center; }
-    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    @media print { .actions-row, .sidebar-shell, .footer { display:none !important; } .container { width:100% !important; margin:0 !important; } .receipt-card { box-shadow:none; border:1px solid #ccc; } }
-</style>
+
 
 <div class="receipt-shell">
     <div class="receipt-card">
         <div class="receipt-head">
             <div>
-                <h2 style="margin:0;">Admission Fee Receipt</h2>
+                <h2 class="css-inline-1">Admission Fee Receipt</h2>
                 <div>Matrix Computer Education</div>
             </div>
             <div>
@@ -33,12 +26,12 @@
             <div class="receipt-box"><strong>Mobile</strong><br>{{ student.mobile_no|default:"-" }}</div>
             <div class="receipt-box"><strong>Center</strong><br>{{ student.center.name|default:"-" }}</div>
             <div class="receipt-box"><strong>Batch</strong><br>{{ student.batch|default:"-" }}</div>
-            <div class="receipt-box" style="grid-column:1 / -1;"><strong>Courses</strong><br>{% for course in student.courses.all %}{{ course.name }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</div>
+            <div class="receipt-box css-inline-2"><strong>Courses</strong><br>{% for course in student.courses.all %}{{ course.name }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</div>
         </div>
 
         <div class="amount-box">
-            <div style="font-size:14px;opacity:0.88;">Admission Received</div>
-            <div style="font-size:34px;font-weight:800;margin-top:6px;">{{ receipt_amount }}</div>
+            <div class="css-inline-3">Admission Received</div>
+            <div class="css-inline-4">{{ receipt_amount }}</div>
         </div>
 
         <div class="actions-row">

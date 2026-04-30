@@ -1,14 +1,20 @@
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import Batch, Center, Course, Student, Trainer, TrainerSchedule
+from student.portal import ROLE_ADMIN, ROLE_TRAINER, get_portal_role, get_trainer_for_user_or_404, role_required
 
 
+User = get_user_model()
+
+
+@role_required(ROLE_ADMIN)
 def trainer_list(request):
     query = request.GET.get("q", "").strip()
-    trainers = Trainer.objects.prefetch_related("courses").annotate(
+    trainers = Trainer.objects.prefetch_related("courses").select_related("user").annotate(
         student_count=Count("student", distinct=True),
         schedule_count=Count("trainerschedule", distinct=True),
     ).order_by("name")
@@ -16,7 +22,8 @@ def trainer_list(request):
         trainers = trainers.filter(
             Q(name__icontains=query) |
             Q(mobile__icontains=query) |
-            Q(courses__name__icontains=query)
+            Q(courses__name__icontains=query) |
+            Q(user__username__icontains=query)
         ).distinct()
 
     return render(
@@ -30,8 +37,12 @@ def trainer_list(request):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def trainer_detail(request, id):
-    trainer = get_object_or_404(Trainer.objects.prefetch_related("courses"), id=id)
+    if get_portal_role(request.user) == ROLE_TRAINER:
+        trainer = get_trainer_for_user_or_404(request.user, id, Trainer.objects.prefetch_related("courses").select_related("user"))
+    else:
+        trainer = get_object_or_404(Trainer.objects.prefetch_related("courses").select_related("user"), id=id)
     schedules = TrainerSchedule.objects.select_related("center", "batch").filter(trainer=trainer)
     assigned_students = Student.objects.filter(trainer=trainer).select_related("batch", "center").order_by("name")
     return render(
@@ -46,38 +57,78 @@ def trainer_detail(request, id):
     )
 
 
+@role_required(ROLE_ADMIN)
 def add_trainer(request):
     courses = Course.objects.all().order_by("name")
     if request.method == "POST":
+        error = validate_trainer_form(request)
+        if error:
+            return render(
+                request,
+                "trainer/add_trainer.html",
+                {
+                    "courses": courses,
+                    "users": available_portal_users(),
+                    "error": [error],
+                    "form_data": trainer_form_data_from_request(request),
+                },
+            )
+        user = resolve_portal_user(request)
         trainer = Trainer.objects.create(
             name=request.POST.get("name"),
             age=request.POST.get("age") or None,
             dob=request.POST.get("dob") or None,
             mobile=request.POST.get("mobile"),
             joining_date=request.POST.get("joining_date") or None,
+            user=user,
         )
         trainer.courses.set(request.POST.getlist("courses"))
         messages.success(request, f"{trainer.name} added successfully.")
         return redirect("trainer_detail", id=trainer.id)
-    return render(request, "trainer/add_trainer.html", {"courses": courses})
+    return render(request, "trainer/add_trainer.html", {"courses": courses, "users": available_portal_users(), "form_data": {}})
 
 
+@role_required(ROLE_ADMIN)
 def update_trainer(request, id):
     trainer = get_object_or_404(Trainer, id=id)
     courses = Course.objects.all().order_by("name")
     if request.method == "POST":
+        error = validate_trainer_form(request, current_user=trainer.user)
+        if error:
+            return render(
+                request,
+                "trainer/update_trainer.html",
+                {
+                    "trainer": trainer,
+                    "courses": courses,
+                    "users": available_portal_users(trainer.user_id),
+                    "error": [error],
+                    "form_data": trainer_form_data_from_request(request),
+                },
+            )
         trainer.name = request.POST.get("name")
         trainer.age = request.POST.get("age") or None
         trainer.dob = request.POST.get("dob") or None
         trainer.mobile = request.POST.get("mobile")
         trainer.joining_date = request.POST.get("joining_date") or None
+        trainer.user = resolve_portal_user(request, current_user=trainer.user)
         trainer.save()
         trainer.courses.set(request.POST.getlist("courses"))
         messages.success(request, f"{trainer.name} updated successfully.")
         return redirect("trainer_detail", id=trainer.id)
-    return render(request, "trainer/update_trainer.html", {"trainer": trainer, "courses": courses})
+    return render(
+        request,
+        "trainer/update_trainer.html",
+        {
+            "trainer": trainer,
+            "courses": courses,
+            "users": available_portal_users(trainer.user_id),
+            "form_data": {"login_username": trainer.user.username if trainer.user_id else "", "login_password": ""},
+        },
+    )
 
 
+@role_required(ROLE_ADMIN)
 def delete_trainer(request, id):
     trainer = get_object_or_404(Trainer, id=id)
     trainer_name = trainer.name
@@ -86,6 +137,7 @@ def delete_trainer(request, id):
     return redirect("trainer_list")
 
 
+@role_required(ROLE_ADMIN)
 def trainer_schedule_page(request):
     trainer_id = request.GET.get("trainer", "").strip()
     schedules = TrainerSchedule.objects.select_related("trainer", "center", "batch").order_by(
@@ -123,6 +175,7 @@ def trainer_schedule_page(request):
     )
 
 
+@role_required(ROLE_ADMIN)
 def add_schedule(request, trainer_id=None):
     initial_trainer = get_object_or_404(Trainer, id=trainer_id) if trainer_id else None
     trainers = Trainer.objects.all().order_by("name")
@@ -178,6 +231,7 @@ def add_schedule(request, trainer_id=None):
     )
 
 
+@role_required(ROLE_ADMIN)
 def update_schedule(request, id):
     schedule = get_object_or_404(TrainerSchedule.objects.select_related("trainer", "center", "batch"), id=id)
     trainers = Trainer.objects.all().order_by("name")
@@ -212,6 +266,7 @@ def update_schedule(request, id):
     )
 
 
+@role_required(ROLE_ADMIN)
 def delete_schedule(request, id):
     schedule = get_object_or_404(TrainerSchedule.objects.select_related("trainer"), id=id)
     messages.success(request, "Schedule deleted successfully.")
@@ -255,3 +310,75 @@ def create_bulk_trainer_schedule(trainer, start_batch_id, end_batch_id, center_i
     if created_count == 0:
         raise ValidationError("No new schedule slot was created. Selected range may already exist.")
     return created_count
+
+
+def available_portal_users(current_user_id=None):
+    queryset = User.objects.filter(is_active=True)
+    queryset = queryset.exclude(trainer_profile__isnull=False).exclude(counsellor_profile__isnull=False)
+    if current_user_id:
+        queryset = queryset | User.objects.filter(id=current_user_id)
+    return queryset.order_by("username").distinct()
+
+
+def trainer_form_data_from_request(request):
+    return {
+        "login_username": (request.POST.get("login_username") or "").strip(),
+        "login_password": request.POST.get("login_password") or "",
+        "user_id": request.POST.get("user") or "",
+    }
+
+
+def validate_trainer_form(request, current_user=None):
+    user_id = request.POST.get("user") or None
+    login_username = (request.POST.get("login_username") or "").strip()
+    login_password = request.POST.get("login_password") or ""
+    if login_password and not login_username and not user_id:
+        return "Enter a username when setting a login password."
+    if login_username:
+        queryset = User.objects.filter(username__iexact=login_username)
+        if current_user:
+            queryset = queryset.exclude(id=current_user.id)
+        if queryset.exists():
+            return "That login username already exists."
+    return None
+
+
+def resolve_portal_user(request, current_user=None):
+    user_id = request.POST.get("user") or None
+    login_username = (request.POST.get("login_username") or "").strip()
+    login_password = request.POST.get("login_password") or ""
+    if user_id:
+        user = User.objects.get(id=user_id)
+        should_save = False
+        if login_username and user.username != login_username:
+            user.username = login_username
+            should_save = True
+        if login_password:
+            user.set_password(login_password)
+            should_save = True
+        if user.first_name != (request.POST.get("name") or ""):
+            user.first_name = request.POST.get("name") or ""
+            should_save = True
+        if should_save:
+            user.save()
+        return user
+    if current_user:
+        should_save = False
+        if login_username and current_user.username != login_username:
+            current_user.username = login_username
+            should_save = True
+        if login_password:
+            current_user.set_password(login_password)
+            should_save = True
+        if current_user.first_name != (request.POST.get("name") or ""):
+            current_user.first_name = request.POST.get("name") or ""
+            should_save = True
+        if should_save:
+            current_user.save()
+        return current_user
+    if login_username:
+        user = User.objects.create_user(username=login_username, password=login_password or User.objects.make_random_password())
+        user.first_name = request.POST.get("name") or ""
+        user.save()
+        return user
+    return current_user

@@ -7,14 +7,26 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from student.models import Attendance, Batch, Center, CenterLogistics, Student, Trainer
+from student.portal import (
+    ROLE_ADMIN,
+    ROLE_TRAINER,
+    get_portal_role,
+    get_student_for_user_or_404,
+    role_required,
+    scope_batches_for_user,
+    scope_centers_for_user,
+    scope_students_for_user,
+    scope_trainers_for_user,
+)
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def attendance_batches(request):
     search_query = request.GET.get("q", "").strip()
     batch_data = []
-    centers = list(Center.objects.all().order_by("name"))
+    centers = list(scope_centers_for_user(request.user, Center.objects.all()).order_by("name"))
 
-    for batch in Batch.objects.all().order_by("time"):
+    for batch in scope_batches_for_user(request.user, Batch.objects.all()).order_by("time"):
         batch_label = str(batch)
         center_rows = []
         total_students = 0
@@ -22,7 +34,10 @@ def attendance_batches(request):
         trainer_names_for_batch = set()
 
         for center in centers:
-            center_students = Student.objects.select_related("trainer").filter(batch=batch, center=center)
+            center_students = scope_students_for_user(
+                request.user,
+                Student.objects.select_related("trainer").filter(batch=batch, center=center),
+            )
             student_count = center_students.count()
             logistics = CenterLogistics.objects.filter(center=center).first()
             capacity = logistics.total_capacity if logistics else 0
@@ -75,12 +90,16 @@ def attendance_batches(request):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def attendance_batch_detail(request, batch_id):
-    batch = get_object_or_404(Batch, id=batch_id)
+    batch = get_object_or_404(scope_batches_for_user(request.user, Batch.objects.all()), id=batch_id)
     selected_date = parse_selected_date(request.GET.get("date"))
     trainer_filter = request.GET.get("trainer", "").strip()
 
-    students_qs = Student.objects.select_related("trainer", "center", "batch").filter(batch=batch)
+    students_qs = scope_students_for_user(
+        request.user,
+        Student.objects.select_related("trainer", "center", "batch").filter(batch=batch),
+    )
     if trainer_filter:
         students_qs = students_qs.filter(trainer_id=trainer_filter)
     students = list(students_qs.order_by("center__name", "trainer__name", "name"))
@@ -149,19 +168,21 @@ def attendance_batch_detail(request, batch_id):
         "leave_count": leave_count,
         "unmarked_count": max(len(students) - present_count - absent_count - leave_count, 0),
         "trainer_filter": trainer_filter,
-        "trainers": Trainer.objects.filter(student__batch=batch).distinct().order_by("name"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.filter(student__batch=batch)).distinct().order_by("name"),
     }
     return render(request, "attendance/batch_detail.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def mark_attendance(request, trainer_id, batch_id):
     base_url = reverse("attendance_batch_detail", args=[batch_id])
     return redirect(f"{base_url}?trainer={trainer_id}")
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 @require_POST
 def save_attendance_record(request, student_id):
-    student = get_object_or_404(Student.objects.select_related("batch"), id=student_id)
+    student = get_student_for_user_or_404(request.user, student_id, Student.objects.select_related("batch"))
     selected_date = parse_selected_date(request.POST.get("date"))
     status = (request.POST.get("status") or "").strip().lower()
     remarks = (request.POST.get("remarks") or "").strip()
@@ -195,6 +216,7 @@ def parse_selected_date(raw_date):
     return date.today()
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def daily_absentees(request):
     selected_date = parse_selected_date(request.GET.get("date"))
     center_id = request.GET.get("center", "").strip()
@@ -203,10 +225,12 @@ def daily_absentees(request):
     records_qs = Attendance.objects.select_related(
         "student__center", "student__batch", "student__trainer"
     ).filter(date=selected_date, status="absent")
+    allowed_centers = scope_centers_for_user(request.user, Center.objects.all())
     if center_id:
         records_qs = records_qs.filter(student__center_id=center_id)
     if batch_id:
         records_qs = records_qs.filter(student__batch_id=batch_id)
+    records_qs = records_qs.filter(student_id__in=scope_students_for_user(request.user, Student.objects.all()).values_list("id", flat=True))
 
     records = list(records_qs.order_by("student__center__name", "student__batch__time", "student__name"))
     return render(
@@ -217,13 +241,14 @@ def daily_absentees(request):
             "records": records,
             "center_id": center_id,
             "batch_id": batch_id,
-            "centers": Center.objects.all().order_by("name"),
-            "batches": Batch.objects.all().order_by("time"),
+            "centers": allowed_centers.order_by("name"),
+            "batches": scope_batches_for_user(request.user, Batch.objects.all()).order_by("time"),
             "total_absentees": len(records),
         },
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def attendance_monthly_summary(request):
     today = date.today()
     month_value = request.GET.get("month", "").strip()
@@ -235,7 +260,7 @@ def attendance_monthly_summary(request):
     except ValueError:
         selected_month = today.replace(day=1)
 
-    students_qs = Student.objects.select_related("center", "batch", "trainer").all()
+    students_qs = scope_students_for_user(request.user, Student.objects.select_related("center", "batch", "trainer").all())
     if center_id:
         students_qs = students_qs.filter(center_id=center_id)
     if batch_id:
@@ -277,8 +302,8 @@ def attendance_monthly_summary(request):
             "summary_rows": summary_rows,
             "center_id": center_id,
             "batch_id": batch_id,
-            "centers": Center.objects.all().order_by("name"),
-            "batches": Batch.objects.all().order_by("time"),
+            "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
+            "batches": scope_batches_for_user(request.user, Batch.objects.all()).order_by("time"),
             "total_students": len(summary_rows),
         },
     )

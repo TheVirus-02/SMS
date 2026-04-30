@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/portal/login.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="login-shell">
+    <div class="hero-card css-inline-1">
+        <h2 class="css-inline-2">Portal Login</h2>
+        <p class="css-inline-3">Use the login created for admin, counsellor, or trainer access.</p>
+    </div>
+
+    <form method="post" class="card login-card">
+        {% csrf_token %}
+        <div class="login-grid">
+            {{ form.non_field_errors }}
+            <div>
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                {{ form.username }}
+            </div>
+            <div>
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                {{ form.password }}
+            </div>
+            <button class="btn" type="submit">Login</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

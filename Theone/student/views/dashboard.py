@@ -1,12 +1,20 @@
 from datetime import date, timedelta
 
 from django.db.models import Sum
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
 from student.models import Attendance, Batch, Center, CommunicationLog, Course, Enquiry, Installment, Student, Trainer
+from student.portal import ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER, get_portal_role, portal_login_required
 
 
+@portal_login_required
 def index(request):
+    role = get_portal_role(request.user)
+    if role == ROLE_COUNSELLOR:
+        return redirect("counsellor_dashboard")
+    if role == ROLE_TRAINER:
+        return redirect("trainer_dashboard")
+
     today = date.today()
     students = Student.objects.select_related("center").prefetch_related("courses").all()
     trainers = Trainer.objects.all()

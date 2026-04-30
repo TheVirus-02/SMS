@@ -1,0 +1,125 @@
+.page-shell {
+        display: grid;
+        gap: 20px;
+    }
+
+    .hero-card,
+    .summary-card,
+    .table-card,
+    .message-card,
+    .quick-card {
+        padding: 22px;
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, var(--brand-black), var(--brand-red));
+        color: #fff;
+    }
+
+    .message-card {
+        background: var(--surface-muted);
+        border-left: 4px solid var(--brand-black);
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .quick-card {
+        background: linear-gradient(135deg, #fff8f8, #ffffff);
+    }
+
+    .quick-card strong {
+        display: block;
+        font-size: 18px;
+        color: var(--brand-black);
+        margin-bottom: 6px;
+    }
+
+    .summary-box {
+        background: var(--surface-muted);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .summary-box strong {
+        display: block;
+        font-size: 26px;
+        color: var(--brand-black);
+        margin-top: 6px;
+    }
+
+    .meta {
+        color: var(--text-muted);
+    }
+
+    .section-head {
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        align-items:center;
+        flex-wrap:wrap;
+        margin-bottom:14px;
+    }
+
+    .section-kicker {
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:7px 12px;
+        border-radius:999px;
+        background:var(--surface-muted);
+        color:var(--brand-black);
+        font-size:13px;
+        font-weight:700;
+    }
+
+    .table-wrap {
+        overflow-x:auto;
+    }
+
+    input {
+        width: 100%;
+        max-width: 120px;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff8f8;
+    }
+
+    .save-btn {
+        border: 0;
+        background: var(--brand-black);
+        color: #fff;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .save-note {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+.css-inline-1 { display:none; }
+
+.css-inline-2 { margin: 0 0 8px; }
+
+.css-inline-3 { margin: 0; }
+
+.css-inline-4 { margin-top: 0; }
+
+.css-inline-5 { margin:10px 0 0; }

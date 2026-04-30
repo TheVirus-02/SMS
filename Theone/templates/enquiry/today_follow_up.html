@@ -1,29 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/enquiry/today_follow_up.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .table-card, .filter-card, .message-card, .focus-card { padding:22px; }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .message-card { background:var(--surface-muted); border-left:4px solid var(--brand-black); }
-    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-top:18px; }
-    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
-    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
-    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:12px; align-items:end; }
-    .focus-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
-    .focus-card { background:linear-gradient(135deg, #fff8f8, #ffffff); }
-    .focus-card strong { display:block; font-size:18px; color:var(--brand-black); margin-bottom:6px; }
-    label { display:block; font-weight:600; margin-bottom:6px; color:var(--brand-black); }
-    .meta { color:var(--text-muted); }
-    .section-title { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
-    .section-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-black); font-size:13px; font-weight:700; }
-    .table-wrap { overflow-x:auto; }
-    @media (max-width: 900px) { .filter-grid { grid-template-columns:1fr; } }
-</style>
+
 
 <div class="page-shell">
     {% if messages %}
@@ -33,8 +16,8 @@
     {% endif %}
 
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Today Follow-up</h2>
-        <p style="margin:0;">Work today's enquiries, overdue calls, and ready-for-admission leads from one operational page.</p>
+        <h2 class="css-inline-1">Today Follow-up</h2>
+        <p class="css-inline-2">Work today's enquiries, overdue calls, and ready-for-admission leads from one operational page.</p>
         <div class="action-row">
             <a class="secondary-link" href="{% url 'enquiry_list' %}">Back to Enquiries</a>
         </div>
@@ -82,7 +65,7 @@
         <div class="section-title">
             <div>
                 <div class="section-kicker">Today Queue</div>
-                <h3 style="margin:10px 0 0;">Today Follow-up List</h3>
+                <h3 class="css-inline-3">Today Follow-up List</h3>
             </div>
             <div class="meta">Total: {{ total_enquiries }}</div>
         </div>
@@ -122,7 +105,7 @@
         <div class="section-title">
             <div>
                 <div class="section-kicker">Overdue Queue</div>
-                <h3 style="margin:10px 0 0;">Overdue Follow-up</h3>
+                <h3 class="css-inline-3">Overdue Follow-up</h3>
             </div>
             <div class="meta">Total: {{ overdue_count }}</div>
         </div>
@@ -162,7 +145,7 @@
         <div class="section-title">
             <div>
                 <div class="section-kicker">Ready Leads</div>
-                <h3 style="margin:10px 0 0;">Ready For Admission</h3>
+                <h3 class="css-inline-3">Ready For Admission</h3>
             </div>
             <div class="meta">Total: {{ ready_count }}</div>
         </div>

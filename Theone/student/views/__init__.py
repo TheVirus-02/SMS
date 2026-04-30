@@ -6,6 +6,7 @@ from .attendance import (
     mark_attendance,
     save_attendance_record,
 )
+from .portal import counsellor_dashboard, portal_login, portal_logout, trainer_dashboard
 from .automation import (
     communication_log_list,
     daily_summary,

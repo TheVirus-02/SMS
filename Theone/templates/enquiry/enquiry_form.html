@@ -1,30 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/enquiry/enquiry_form.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .form-shell { max-width:1100px; margin:0 auto; display:grid; gap:20px; }
-    .hero-card, .form-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; }
-    .field-group { display:grid; gap:6px; }
-    .field-group.full { grid-column:1 / -1; }
-    label { font-weight:600; color:var(--brand-black); }
-    input, select, textarea { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
-    textarea { min-height:96px; resize:vertical; }
-    .error-box, .info-box { padding:14px 16px; border-radius:14px; }
-    .error-box { background:#fff0f0; color:#b23a3a; }
-    .info-box { background:var(--surface-muted); color:var(--brand-black); }
-    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; border:0; cursor:pointer; }
-    .btn { background:var(--brand-black); color:#fff; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    @media (max-width:900px) { .form-grid { grid-template-columns:1fr; } }
-</style>
+
 
 <div class="form-shell">
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">{% if enquiry %}Update Enquiry{% else %}Add Enquiry{% endif %}</h2>
-        <p style="margin:0;">Capture lead details, follow-up plan, course interest, and admission probability in one place.</p>
+        <h2 class="css-inline-1">{% if enquiry %}Update Enquiry{% else %}Add Enquiry{% endif %}</h2>
+        <p class="css-inline-2">Capture lead details, follow-up plan, course interest, and admission probability in one place.</p>
     </div>
 
     <form method="POST" class="form-card">
@@ -37,7 +24,7 @@
         </div>
         {% endif %}
 
-        <h3 style="margin-top:0;">Basic Details</h3>
+        <h3 class="css-inline-3">Basic Details</h3>
         <div class="form-grid">
             <div class="field-group"><label for="name">Student Name</label><input id="name" name="name" type="text" value="{{ form_data.name }}" required></div>
             <div class="field-group"><label for="mobile_no">Mobile Number</label><input id="mobile_no" name="mobile_no" type="text" value="{{ form_data.mobile_no }}" required></div>
@@ -52,7 +39,7 @@
             <div class="field-group full"><label for="address">Address</label><textarea id="address" name="address" required>{{ form_data.address }}</textarea></div>
         </div>
 
-        <h3 style="margin-top:24px;">Course Interest</h3>
+        <h3 class="css-inline-4">Course Interest</h3>
         <div class="form-grid">
             <div class="field-group">
                 <label for="interested_course">Interested Course</label>
@@ -84,7 +71,7 @@
             </div>
         </div>
 
-        <h3 style="margin-top:24px;">Tracking</h3>
+        <h3 class="css-inline-4">Tracking</h3>
         <div class="form-grid">
             <div class="field-group">
                 <label for="assigned_counsellor">Assigned Counsellor</label>
@@ -119,7 +106,7 @@
             <div class="field-group full"><label for="follow_up_remarks">Follow-up Remarks</label><textarea id="follow_up_remarks" name="follow_up_remarks">{{ form_data.follow_up_remarks }}</textarea></div>
         </div>
 
-        <div class="info-box" style="margin-top:18px;">After the enquiry becomes ready, use the conversion action to create the actual student admission record automatically.</div>
+        <div class="info-box css-inline-5">After the enquiry becomes ready, use the conversion action to create the actual student admission record automatically.</div>
 
         <div class="action-row">
             <button class="btn" type="submit">{% if enquiry %}Update Enquiry{% else %}Save Enquiry{% endif %}</button>

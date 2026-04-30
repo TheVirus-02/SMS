@@ -1,20 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/enquiry/enquiry_detail.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .danger-link { background:#fff0f0; color:#b23a3a; }
-    .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; }
-    .info-item { background:var(--surface-muted); border:1px solid var(--border); border-radius:14px; padding:14px; }
-    .info-item span { display:block; color:var(--text-muted); font-size:13px; margin-bottom:6px; }
-    .status-pill { display:inline-block; padding:6px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-weight:700; }
-</style>
+
 
 <div class="page-shell">
     {% if messages %}
@@ -24,8 +16,8 @@
     {% endif %}
 
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">{{ enquiry.name }}</h2>
-        <p style="margin:0;">Enquiry profile and conversion status.</p>
+        <h2 class="css-inline-1">{{ enquiry.name }}</h2>
+        <p class="css-inline-2">Enquiry profile and conversion status.</p>
         <div class="action-row">
             <a class="btn" href="{% url 'update_enquiry' enquiry.id %}">Edit Enquiry</a>
             {% if enquiry.is_converted %}
@@ -39,7 +31,7 @@
     </div>
 
     <div class="info-card">
-        <h3 style="margin-top:0;">Enquiry Details</h3>
+        <h3 class="css-inline-3">Enquiry Details</h3>
         <div class="info-grid">
             <div class="info-item"><span>Mobile</span><strong>{{ enquiry.mobile_no }}</strong></div>
             <div class="info-item"><span>Alternative Mobile</span><strong>{{ enquiry.alt_mobile_no|default:"-" }}</strong></div>
@@ -62,19 +54,19 @@
             <div class="info-item"><span>Demo Date</span><strong>{{ enquiry.demo_date|default:"-" }}</strong></div>
             <div class="info-item"><span>Demo Result</span><strong>{{ enquiry.demo_result|default:"-" }}</strong></div>
             <div class="info-item"><span>Lost Reason</span><strong>{{ enquiry.lost_reason|default:"-" }}</strong></div>
-            <div class="info-item" style="grid-column:1 / -1;"><span>Address</span><strong>{{ enquiry.address|default:"-" }}</strong></div>
-            <div class="info-item" style="grid-column:1 / -1;"><span>Follow-up Remarks</span><strong>{{ enquiry.follow_up_remarks|default:"-" }}</strong></div>
+            <div class="info-item css-inline-4"><span>Address</span><strong>{{ enquiry.address|default:"-" }}</strong></div>
+            <div class="info-item css-inline-4"><span>Follow-up Remarks</span><strong>{{ enquiry.follow_up_remarks|default:"-" }}</strong></div>
         </div>
     </div>
 
     <div class="table-card">
-        <h3 style="margin-top:0;">Conversion</h3>
+        <h3 class="css-inline-3">Conversion</h3>
         {% if enquiry.is_converted %}
-        <p style="margin:0 0 10px;">This enquiry has already been converted to admission.</p>
+        <p class="css-inline-5">This enquiry has already been converted to admission.</p>
         <div><strong>Converted Date:</strong> {{ enquiry.converted_at|default:"-" }}</div>
         <div><strong>Student Record:</strong> <a href="{% url 'student_detail' enquiry.converted_student.id %}">{{ enquiry.converted_student.name }}</a></div>
         {% else %}
-        <p style="margin:0;">This enquiry is not converted yet. Use <strong>Convert To Admission</strong> when the student is ready to join.</p>
+        <p class="css-inline-2">This enquiry is not converted yet. Use <strong>Convert To Admission</strong> when the student is ready to join.</p>
         {% endif %}
     </div>
 </div>

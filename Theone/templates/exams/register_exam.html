@@ -1,95 +1,24 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/exams/register_exam.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .exam-grid {
-        display: grid;
-        gap: 20px;
-        grid-template-columns: 2fr 1fr;
-    }
 
-    .card {
-        background: #fff;
-        border-radius: 16px;
-        padding: 22px;
-        box-shadow: 0 10px 28px rgba(18, 39, 63, 0.08);
-    }
-
-    .field-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-    }
-
-    label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-
-    input,
-    select,
-    textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        box-sizing: border-box;
-    }
-
-    .course-option {
-        display: flex;
-        gap: 10px;
-        align-items: start;
-        padding: 12px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        margin-bottom: 10px;
-    }
-
-    .btn {
-        background: var(--brand-black);
-        color: #fff;
-        border: 0;
-        border-radius: 10px;
-        padding: 12px 18px;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .muted {
-        color: var(--text-muted);
-    }
-
-    .pill {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: var(--surface-muted);
-        color: var(--brand-red);
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    @media (max-width: 900px) {
-        .exam-grid,
-        .field-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
 
 {% if messages %}
     {% for message in messages %}
-        <div class="card" style="margin-bottom: 16px;">{{ message }}</div>
+        <div class="card css-inline-1">{{ message }}</div>
     {% endfor %}
 {% endif %}
 
 <div class="exam-grid">
     <div class="card">
-        <h2 style="margin-top: 0;">Register Exam</h2>
+        <h2 class="css-inline-2">Register Exam</h2>
         <p class="muted">Student: <strong>{{ student.name }}</strong> ({{ student.student_id }})</p>
-        <p class="muted" style="margin-bottom: 18px;">
+        <p class="muted css-inline-3">
             SMS Status:
             <span class="pill">{{ sms_status.status_label }}</span>
             | From {{ sms_status.from_number }}
@@ -106,7 +35,7 @@
             <form method="POST">
                 {% csrf_token %}
 
-                <div style="margin-bottom: 18px;">
+                <div class="css-inline-3">
                     <label>Completed Course</label>
                     {% for sc in completed_courses %}
                         <label class="course-option">
@@ -163,12 +92,12 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 14px;">
+                <div class="css-inline-4">
                     <label for="remarks">Remarks</label>
                     <textarea id="remarks" name="remarks" rows="4" placeholder="Optional notes"></textarea>
                 </div>
 
-                <button class="btn" type="submit" style="margin-top: 18px;">Save Exam Registration</button>
+                <button class="btn css-inline-5" type="submit">Save Exam Registration</button>
             </form>
         {% else %}
             <p class="muted">No completed courses are available for exam registration. Complete a course first, or the exam has already been registered.</p>
@@ -176,15 +105,15 @@
     </div>
 
     <div class="card">
-        <h3 style="margin-top: 0;">Existing Exam Records</h3>
+        <h3 class="css-inline-2">Existing Exam Records</h3>
         {% for reg in existing_registrations %}
-            <div style="padding: 12px 0; border-bottom: 1px solid var(--surface-muted);">
+            <div class="css-inline-6">
                 <strong>{{ reg.course_name }}</strong><br>
                 <span class="muted">{{ reg.exam_date }} | Receipt {{ reg.receipt_no }}</span><br>
                 <span class="pill">{{ reg.get_payment_method_display }}</span>
                 {% with sms_log=reg.latest_sms_log %}
                     {% if sms_log %}
-                        <div class="muted" style="margin-top: 6px;">
+                        <div class="muted css-inline-7">
                             Message {{ sms_log.get_status_display|lower }} to student on {{ sms_log.created_at|date:"d M Y H:i" }}
                         </div>
                     {% endif %}

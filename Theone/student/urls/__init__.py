@@ -8,11 +8,13 @@ from .enquiries import urlpatterns as enquiry_urlpatterns
 from .exams import urlpatterns as exam_urlpatterns
 from .installments import urlpatterns as installment_urlpatterns
 from .logistics import urlpatterns as logistics_urlpatterns
+from .portal import urlpatterns as portal_urlpatterns
 from .students import urlpatterns as student_urlpatterns
 from .trainers import urlpatterns as trainer_urlpatterns
 
 urlpatterns = (
-    dashboard_urlpatterns
+    portal_urlpatterns
+    + dashboard_urlpatterns
     + batch_urlpatterns
     + counsellor_urlpatterns
     + course_urlpatterns

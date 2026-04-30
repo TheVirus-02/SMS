@@ -1,23 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/course/course_list.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .filter-card, .table-card { padding:22px; }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; cursor:pointer; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .search-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:12px; align-items:end; }
-    label { display:block; font-weight:600; margin-bottom:6px; color:var(--brand-black); }
-    input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff8f8; }
-    .table-wrap { overflow-x:auto; }
-    .meta { color:var(--text-muted); }
-    .trainer-tags { display:flex; flex-wrap:wrap; gap:8px; }
-    .trainer-tag { background:var(--surface-muted); color:var(--brand-red); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
-    @media (max-width:800px) { .search-grid { grid-template-columns:1fr; } }
-</style>
+
 
 <div class="page-shell">
     {% if messages %}
@@ -27,8 +16,8 @@
     {% endif %}
 
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Course Management</h2>
-        <p style="margin:0;">Create courses, assign multiple trainers, and manage course records from one place.</p>
+        <h2 class="css-inline-1">Course Management</h2>
+        <p class="css-inline-2">Create courses, assign multiple trainers, and manage course records from one place.</p>
         <div class="action-row">
             <a class="btn" href="{% url 'add_course' %}">Add Course</a>
             <a class="secondary-link" href="{% url 'trainer_list' %}">Open Trainers</a>
@@ -49,8 +38,8 @@
     </form>
 
     <div class="table-card">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-            <h3 style="margin:0;">All Courses</h3>
+        <div class="css-inline-3">
+            <h3 class="css-inline-2">All Courses</h3>
             <div class="meta">Total Courses: {{ total_courses }}</div>
         </div>
         <div class="table-wrap">

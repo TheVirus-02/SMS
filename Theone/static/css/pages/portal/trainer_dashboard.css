@@ -1,0 +1,13 @@
+.page-shell { display:grid; gap:20px; }
+    .stats-grid, .panel-grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+    .metric-box { padding:18px; }
+    .metric-box strong { display:block; font-size:30px; margin-top:8px; color:var(--brand-black); }
+    .table-wrap { overflow-x:auto; }
+
+.css-inline-1 { padding:22px; }
+
+.css-inline-2 { margin:0 0 8px; }
+
+.css-inline-3 { margin:0; }
+
+.css-inline-4 { margin-top:0; }

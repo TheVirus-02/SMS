@@ -1,26 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/automation/reminder_center.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .table-card, .status-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:16px; margin-top:18px; }
-    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
-    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
-    .actions-row, .mini-actions { display:flex; gap:10px; flex-wrap:wrap; }
-    .actions-row { margin-top:18px; }
-    .btn, .secondary-link, .mini-btn { display:inline-block; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn, .mini-btn { background:var(--brand-black); color:#fff; border:0; cursor:pointer; }
-    .btn, .secondary-link { padding:11px 18px; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .mini-btn { padding:8px 12px; font-size:12px; }
-    .section-title { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
-    .meta { color:var(--text-muted); }
-    .status-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
-    .status-chip { display:inline-block; padding:6px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-size:12px; font-weight:700; }
-    .system-ready { color:#1f7a3d; }
-</style>
+
 
 <div class="page-shell">
     {% if messages %}
@@ -30,12 +16,14 @@
     {% endif %}
 
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Reminder Center</h2>
-        <p style="margin:0;">Run manual reminders safely, track communication, and clear daily follow-up pressure from one place.</p>
+        <h2 class="css-inline-1">Reminder Center</h2>
+        <p class="css-inline-2">Run manual reminders safely, track communication, and clear daily follow-up pressure from one place.</p>
         <div class="actions-row">
+            {% if is_admin_automation_user %}
             <a class="secondary-link" href="{% url 'communication_log_list' %}">Communication Logs</a>
             <a class="secondary-link" href="{% url 'daily_summary' %}">Daily Summary</a>
             <a class="secondary-link" href="{% url 'staff_center_analytics' %}">Staff / Center Analytics</a>
+            {% endif %}
         </div>
         <div class="stats-grid">
             <div class="stat-box">Pending Fee Cases<strong>{{ pending_fee_alert_count }}</strong></div>
@@ -45,9 +33,10 @@
         </div>
     </div>
 
+    {% if can_send_fee_reminders %}
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Bulk Fee Reminders</h3>
+            <h3 class="css-inline-2">Bulk Fee Reminders</h3>
             <div class="meta">Send many student fee reminders in one action</div>
         </div>
         <form method="post" action="{% url 'send_bulk_fee_reminders' %}">
@@ -76,10 +65,12 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
+    {% if can_send_follow_up_reminders %}
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Bulk Follow-Up Reminders</h3>
+            <h3 class="css-inline-2">Bulk Follow-Up Reminders</h3>
             <div class="meta">Send many enquiry follow-up messages in one action</div>
         </div>
         <form method="post" action="{% url 'send_bulk_follow_up_reminders' %}">
@@ -109,10 +100,11 @@
             </div>
         </form>
     </div>
+    {% endif %}
 
     <div class="status-card">
         <div class="section-title">
-            <h3 style="margin:0;">SMS Configuration Status</h3>
+            <h3 class="css-inline-2">SMS Configuration Status</h3>
             <span class="status-chip {% if sms_status.is_ready %}system-ready{% endif %}">{{ sms_status.status_label }}</span>
         </div>
         <div class="status-grid">
@@ -123,9 +115,10 @@
         </div>
     </div>
 
+    {% if can_send_fee_reminders %}
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Priority Fee Reminder Cases</h3>
+            <h3 class="css-inline-2">Priority Fee Reminder Cases</h3>
             <div class="meta">Students with pending fees</div>
         </div>
         <table>
@@ -150,10 +143,12 @@
             {% endfor %}
         </table>
     </div>
+    {% endif %}
 
+    {% if can_send_follow_up_reminders %}
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Today and Overdue Follow-Ups</h3>
+            <h3 class="css-inline-2">Today and Overdue Follow-Ups</h3>
             <div class="meta">Reminder actions for enquiry team</div>
         </div>
         <table>
@@ -194,10 +189,11 @@
             {% endfor %}
         </table>
     </div>
+    {% endif %}
 
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Recent Communication</h3>
+            <h3 class="css-inline-2">Recent Communication</h3>
             <div class="meta">Latest reminder history</div>
         </div>
         <table>

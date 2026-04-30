@@ -1,0 +1,21 @@
+.page-shell { display:grid; gap:20px; }
+    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end; }
+    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { background:var(--surface-muted); }
+    .meta { color:var(--text-muted); }
+    .course-list { display:flex; flex-wrap:wrap; gap:6px; }
+    .course-tag { padding:6px 10px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-size:12px; font-weight:600; }
+
+.css-inline-1 { margin:0 0 8px; }
+
+.css-inline-2 { margin:0; }

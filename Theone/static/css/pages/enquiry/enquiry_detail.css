@@ -1,0 +1,22 @@
+.page-shell { display:grid; gap:20px; }
+    .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; }
+    .info-item { background:var(--surface-muted); border:1px solid var(--border); border-radius:14px; padding:14px; }
+    .info-item span { display:block; color:var(--text-muted); font-size:13px; margin-bottom:6px; }
+    .status-pill { display:inline-block; padding:6px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-weight:700; }
+
+.css-inline-1 { margin:0 0 8px; }
+
+.css-inline-2 { margin:0; }
+
+.css-inline-3 { margin-top:0; }
+
+.css-inline-4 { grid-column:1 / -1; }
+
+.css-inline-5 { margin:0 0 10px; }

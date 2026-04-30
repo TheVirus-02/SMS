@@ -3,8 +3,10 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import Course, StudentCourse, Trainer
+from student.portal import ROLE_ADMIN, role_required
 
 
+@role_required(ROLE_ADMIN)
 def course_list(request):
     query = request.GET.get("q", "").strip()
     courses = Course.objects.annotate(
@@ -28,6 +30,7 @@ def course_list(request):
     )
 
 
+@role_required(ROLE_ADMIN)
 def course_detail(request, id):
     course = get_object_or_404(Course.objects.prefetch_related("trainer_set"), id=id)
     student_courses = StudentCourse.objects.select_related("student").filter(course=course).order_by("student__name")
@@ -43,6 +46,7 @@ def course_detail(request, id):
     )
 
 
+@role_required(ROLE_ADMIN)
 def add_course(request):
     trainers = Trainer.objects.all().order_by("name")
     if request.method == "POST":
@@ -76,6 +80,7 @@ def add_course(request):
     )
 
 
+@role_required(ROLE_ADMIN)
 def update_course(request, id):
     course = get_object_or_404(Course, id=id)
     trainers = Trainer.objects.all().order_by("name")
@@ -117,6 +122,7 @@ def update_course(request, id):
     )
 
 
+@role_required(ROLE_ADMIN)
 def delete_course(request, id):
     course = get_object_or_404(Course, id=id)
     if StudentCourse.objects.filter(course=course).exists():

@@ -1,0 +1,10 @@
+.login-shell { max-width:480px; margin:48px auto; }
+    .login-card { padding:28px; }
+    .login-grid { display:grid; gap:16px; }
+    .errorlist { margin:0; padding-left:18px; color:#b23a3a; }
+
+.css-inline-1 { padding:24px; margin-bottom:18px; }
+
+.css-inline-2 { margin:0 0 8px; }
+
+.css-inline-3 { margin:0; }

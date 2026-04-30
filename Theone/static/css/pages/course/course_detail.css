@@ -1,0 +1,26 @@
+.page-shell { display:grid; gap:20px; }
+    .hero-card, .info-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link, .danger-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .danger-link { background:#fff0f0; color:#b23a3a; }
+    .trainer-tags { display:flex; flex-wrap:wrap; gap:8px; }
+    .trainer-tag { background:var(--surface-muted); color:var(--brand-red); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:600; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+    th { background:var(--surface-muted); }
+    .meta { color:var(--text-muted); }
+
+.css-inline-1 { margin:0 0 8px; }
+
+.css-inline-2 { margin:0; }
+
+.css-inline-3 { margin-top:0; }
+
+.css-inline-4 { line-height:1.7; }
+
+.css-inline-5 { text-decoration:none; }
+
+.css-inline-6 { display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px; }

@@ -162,6 +162,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "student.context_processors.portal_context",
             ],
         },
     },
@@ -228,6 +229,9 @@ if not DEBUG:
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+LOGIN_URL = "/portal/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/portal/login/"
 
 
 SMS_ENABLED = get_bool("SMS_ENABLED", False)

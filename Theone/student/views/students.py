@@ -4,6 +4,7 @@ from datetime import date
 import re
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -22,6 +23,23 @@ from student.models import (
     StudentCourse,
     Trainer,
 )
+from student.portal import (
+    ROLE_ADMIN,
+    ROLE_COUNSELLOR,
+    ROLE_TRAINER,
+    scope_enquiries_for_user,
+    get_portal_role,
+    get_student_for_user_or_404,
+    portal_login_required,
+    role_required,
+    scope_batches_for_user,
+    scope_centers_for_user,
+    scope_counsellors_for_user,
+    scope_students_for_user,
+    scope_trainers_for_user,
+    user_can_manage_fees,
+    user_can_view_exams,
+)
 
 
 def serialize_student_courses(student):
@@ -37,10 +55,57 @@ def parse_report_date(raw_value):
         return None
 
 
+def student_form_options(request):
+    return {
+        "courses": Course.objects.all().order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name"),
+        "batches": scope_batches_for_user(request.user, Batch.objects.all()).order_by("time"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
+        "status_choices": Student.STATUS_CHOICES,
+        "can_manage_fees": user_can_manage_fees(request.user),
+        "can_view_exams": user_can_view_exams(request.user),
+        "portal_role": get_portal_role(request.user),
+    }
+
+
+def apply_student_update_from_request(student, request):
+    role = get_portal_role(request.user)
+    can_manage_fees = user_can_manage_fees(request.user)
+    student.name = request.POST.get("name")
+    student.mobile_no = request.POST.get("mobile_no")
+    student.alt_mobile_no = request.POST.get("alt_mobile_no")
+    student.guardian_name = request.POST.get("guardian_name")
+    student.guardian_mobile = request.POST.get("guardian_mobile")
+    student.email = request.POST.get("email")
+    student.qualification = request.POST.get("qualification")
+    student.address = request.POST.get("address")
+    student.reference_source = request.POST.get("reference_source")
+    student.dob = request.POST.get("dob") or None
+    student.joining_date = request.POST.get("joining_date") or None
+    student.status = request.POST.get("status") or student.status
+    student.batch_id = request.POST.get("batch") or None
+
+    if role in {ROLE_ADMIN, ROLE_COUNSELLOR}:
+        student.counsellor_id = request.POST.get("counsellor") or None
+        student.trainer_id = request.POST.get("trainer") or None
+        student.center_id = request.POST.get("center") or None
+    elif role == ROLE_TRAINER:
+        if student.trainer_id:
+            student.trainer_id = student.trainer_id
+
+    if can_manage_fees:
+        student.course_fee = request.POST.get("course_fee")
+        student.paid_fee = request.POST.get("paid_fee")
+
+
 def build_student_record_context(request):
-    students_qs = Student.objects.select_related(
+    students_qs = scope_students_for_user(
+        request.user,
+        Student.objects.select_related(
         "counsellor", "trainer", "batch", "center"
-    ).prefetch_related("courses")
+        ).prefetch_related("courses"),
+    )
     query = request.GET.get("q", "").strip()
     payment_filter = request.GET.get("payment_status", "").strip()
     student_status = request.GET.get("student_status", "").strip()
@@ -101,16 +166,17 @@ def build_student_record_context(request):
         "counsellor_id": counsellor_id,
         "batch_id": batch_id,
         "sort_by": sort_by,
-        "trainers": Trainer.objects.all(),
-        "centers": Center.objects.all(),
-        "counsellors": Counsellor.objects.select_related("center").all(),
-        "batches": Batch.objects.all().order_by("time"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name"),
+        "batches": scope_batches_for_user(request.user, Batch.objects.all()).order_by("time"),
         "status_choices": Student.STATUS_CHOICES,
         "total_records": len(students),
         "paid_count": sum(1 for student in students if student.payment_status == "Paid"),
         "partial_count": sum(1 for student in students if student.payment_status == "Partial"),
         "pending_count": sum(1 for student in students if student.payment_status == "Pending"),
         "pending_fee_total": sum(student.remaining_fee for student in students),
+        "can_manage_fees": user_can_manage_fees(request.user),
     }
 
 
@@ -121,9 +187,12 @@ def build_pending_fee_context(request):
     counsellor_id = request.GET.get("counsellor", "").strip()
     pending_type = request.GET.get("pending_type", "").strip()
 
-    students_qs = Student.objects.select_related(
+    students_qs = scope_students_for_user(
+        request.user,
+        Student.objects.select_related(
         "center", "trainer", "counsellor", "batch"
-    ).prefetch_related("courses")
+        ).prefetch_related("courses"),
+    )
 
     if query:
         students_qs = students_qs.filter(
@@ -155,13 +224,14 @@ def build_pending_fee_context(request):
         "trainer_id": trainer_id,
         "counsellor_id": counsellor_id,
         "pending_type": pending_type,
-        "centers": Center.objects.all().order_by("name"),
-        "trainers": Trainer.objects.all().order_by("name"),
-        "counsellors": Counsellor.objects.select_related("center").all(),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name"),
         "total_students": len(students),
         "pending_fee_total": sum(student.remaining_fee for student in students),
         "full_pending_count": sum(1 for student in students if student.total_paid == 0),
         "partial_pending_count": sum(1 for student in students if student.total_paid > 0),
+        "can_manage_fees": user_can_manage_fees(request.user),
     }
 
 
@@ -175,21 +245,22 @@ def write_csv_response(filename, headers, rows):
     return response
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def student_registration(request):
-    context = {
-        "courses": Course.objects.all(),
-        "counsellors": Counsellor.objects.select_related("center").all(),
-        "trainers": Trainer.objects.all(),
-        "batches": Batch.objects.all(),
-        "centers": Center.objects.all(),
-        "status_choices": Student.STATUS_CHOICES,
-    }
+    context = student_form_options(request)
     if request.method == "POST":
         mobile_no = (request.POST.get("mobile_no") or "").strip()
         duplicate_error = validate_student_mobile_for_registration(mobile_no)
         if duplicate_error:
             messages.error(request, duplicate_error)
             return render(request, "student/student-registration.html", context)
+
+        role = get_portal_role(request.user)
+        counsellor_id = request.POST.get("counsellor") or None
+        center_id = request.POST.get("center") or None
+        if role == ROLE_COUNSELLOR and hasattr(request.user, "counsellor_profile"):
+            counsellor_id = request.user.counsellor_profile.id
+            center_id = request.user.counsellor_profile.center_id
 
         student = Student.objects.create(
             name=request.POST.get("name"),
@@ -203,12 +274,12 @@ def student_registration(request):
             reference_source=request.POST.get("reference_source"),
             dob=request.POST.get("dob"),
             joining_date=request.POST.get("joining_date"),
-            counsellor_id=request.POST.get("counsellor"),
-            course_fee=request.POST.get("course_fee"),
-            paid_fee=request.POST.get("paid_fee"),
+            counsellor_id=counsellor_id,
+            course_fee=request.POST.get("course_fee") if user_can_manage_fees(request.user) else None,
+            paid_fee=request.POST.get("paid_fee") if user_can_manage_fees(request.user) else None,
             trainer_id=request.POST.get("trainer"),
             batch_id=request.POST.get("batch"),
-            center_id=request.POST.get("center"),
+            center_id=center_id,
             status=request.POST.get("status") or "active",
         )
         student.courses.set(request.POST.getlist("courses"))
@@ -217,12 +288,16 @@ def student_registration(request):
     return render(request, "student/student-registration.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def record(request):
     return render(request, "student/record.html", build_student_record_context(request))
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def student_detail(request, id):
-    student = get_object_or_404(
+    student = get_student_for_user_or_404(
+        request.user,
+        id,
         Student.objects.prefetch_related(
             Prefetch(
                 "sms_logs",
@@ -231,11 +306,10 @@ def student_detail(request, id):
                 ).order_by("-created_at"),
             )
         ),
-        id=id,
     )
-    trainers = Trainer.objects.all()
-    batches = Batch.objects.all()
-    centers = Center.objects.all()
+    trainers = scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name")
+    batches = scope_batches_for_user(request.user, Batch.objects.all()).order_by("time")
+    centers = scope_centers_for_user(request.user, Center.objects.all()).order_by("name")
     today = date.today()
 
     attendance_dict = {item.student_id: item.status for item in Attendance.objects.filter(date=today)}
@@ -257,16 +331,24 @@ def student_detail(request, id):
             ]
         )
 
-    exam_registrations = ExamRegistration.objects.select_related(
-        "student_course__course", "receipt_issued_by"
-    ).prefetch_related(
-        Prefetch("sms_logs", queryset=SmsLog.objects.order_by("-created_at"))
-    ).filter(student_course__student=student)
+    exam_registrations = []
+    if user_can_view_exams(request.user):
+        exam_registrations = ExamRegistration.objects.select_related(
+            "student_course__course", "receipt_issued_by"
+        ).prefetch_related(
+            Prefetch("sms_logs", queryset=SmsLog.objects.order_by("-created_at"))
+        ).filter(student_course__student=student)
 
     if request.method == "POST":
-        student.trainer_id = request.POST.get("trainer")
-        student.batch_id = request.POST.get("batch")
-        student.center_id = request.POST.get("center")
+        role = get_portal_role(request.user)
+        if role in {ROLE_ADMIN, ROLE_COUNSELLOR}:
+            student.trainer_id = request.POST.get("trainer") or None
+            student.batch_id = request.POST.get("batch") or None
+            student.center_id = request.POST.get("center") or None
+        elif role == ROLE_TRAINER:
+            student.batch_id = request.POST.get("batch") or None
+        else:
+            raise PermissionDenied("You cannot update this student.")
         student.save()
         return JsonResponse({"status": "success"})
 
@@ -284,31 +366,18 @@ def student_detail(request, id):
             "calendar_month_label": today.strftime("%B %Y"),
             "exam_registrations": exam_registrations,
             "show_student_nav": True,
+            "can_manage_fees": user_can_manage_fees(request.user),
+            "can_view_exams": user_can_view_exams(request.user),
+            "can_edit_student": True,
         },
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def update_student(request, id):
-    student = get_object_or_404(Student, id=id)
+    student = get_student_for_user_or_404(request.user, id)
     if request.method == "POST":
-        student.name = request.POST.get("name")
-        student.mobile_no = request.POST.get("mobile_no")
-        student.alt_mobile_no = request.POST.get("alt_mobile_no")
-        student.guardian_name = request.POST.get("guardian_name")
-        student.guardian_mobile = request.POST.get("guardian_mobile")
-        student.email = request.POST.get("email")
-        student.qualification = request.POST.get("qualification")
-        student.address = request.POST.get("address")
-        student.reference_source = request.POST.get("reference_source")
-        student.dob = request.POST.get("dob") or None
-        student.joining_date = request.POST.get("joining_date") or None
-        student.counsellor_id = request.POST.get("counsellor") or None
-        student.trainer_id = request.POST.get("trainer")
-        student.batch_id = request.POST.get("batch")
-        student.center_id = request.POST.get("center")
-        student.course_fee = request.POST.get("course_fee")
-        student.paid_fee = request.POST.get("paid_fee")
-        student.status = request.POST.get("status")
+        apply_student_update_from_request(student, request)
         student.save()
 
         selected_courses = list(set(request.POST.getlist("courses")))
@@ -330,18 +399,15 @@ def update_student(request, id):
         "student/student_update.html",
         {
             "student": student,
-            "trainers": Trainer.objects.all(),
-            "batches": Batch.objects.all(),
-            "centers": Center.objects.all(),
-            "courses": Course.objects.all(),
-            "counsellors": Counsellor.objects.select_related("center").all(),
+            **student_form_options(request),
             "show_student_nav": True,
         },
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def add_installment(request, student_id):
-    student = get_object_or_404(Student, id=student_id)
+    student = get_student_for_user_or_404(request.user, student_id)
     last_installment = Installment.objects.filter(student=student).order_by("-installment_no").first()
     next_installment_no = 1 if last_installment is None else last_installment.installment_no + 1
 
@@ -371,9 +437,11 @@ def add_installment(request, student_id):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def edit_installment(request, installment_id):
     installment = get_object_or_404(Installment, id=installment_id)
     student = installment.student
+    get_student_for_user_or_404(request.user, student.id)
 
     if request.method == "POST":
         installment.installment_date = request.POST.get("installment_date")
@@ -399,26 +467,34 @@ def edit_installment(request, installment_id):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def delete_installment(request, installment_id):
     installment = get_object_or_404(Installment, id=installment_id)
     student_id = installment.student_id
+    get_student_for_user_or_404(request.user, student_id)
     if request.method == "POST":
         installment.delete()
         messages.success(request, "Installment deleted successfully.")
     return redirect("student_detail", id=student_id)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def today_collection_dashboard(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
 
-    admission_students_qs = Student.objects.select_related("center").prefetch_related("courses").filter(
-        joining_date=today,
-        paid_fee__gt=0,
+    admission_students_qs = scope_students_for_user(
+        request.user,
+        Student.objects.select_related("center").prefetch_related("courses").filter(
+            joining_date=today,
+            paid_fee__gt=0,
+        ),
     )
     installments_qs = Installment.objects.select_related("student__center").prefetch_related("student__courses").filter(
         installment_date=today
     )
+    allowed_student_ids = scope_students_for_user(request.user, Student.objects.all()).values_list("id", flat=True)
+    installments_qs = installments_qs.filter(student_id__in=allowed_student_ids)
 
     if center_id:
         admission_students_qs = admission_students_qs.filter(center_id=center_id)
@@ -474,23 +550,28 @@ def today_collection_dashboard(request):
             "collection_count": len(collection_rows),
             "center_totals": sorted(center_totals.items()),
             "center_id": center_id,
-            "centers": Center.objects.all().order_by("name"),
+            "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
         },
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR, ROLE_TRAINER)
 def pending_fee_list(request):
     return render(request, "student/pending_fee_list.html", build_pending_fee_context(request))
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def daily_admissions_report(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
     counsellor_id = request.GET.get("counsellor", "").strip()
 
-    students_qs = Student.objects.select_related(
+    students_qs = scope_students_for_user(
+        request.user,
+        Student.objects.select_related(
         "center", "trainer", "counsellor", "batch"
-    ).prefetch_related("courses").filter(joining_date=today)
+        ).prefetch_related("courses").filter(joining_date=today),
+    )
 
     if center_id:
         students_qs = students_qs.filter(center_id=center_id)
@@ -507,14 +588,15 @@ def daily_admissions_report(request):
             "students": students,
             "center_id": center_id,
             "counsellor_id": counsellor_id,
-            "centers": Center.objects.all().order_by("name"),
-            "counsellors": Counsellor.objects.select_related("center").all(),
+            "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
+            "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name"),
             "total_students": len(students),
             "admission_collection_total": sum(student.paid_fee or 0 for student in students),
         },
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def reporting_dashboard(request):
     today = date.today()
     date_from_value = request.GET.get("date_from", "").strip()
@@ -529,18 +611,28 @@ def reporting_dashboard(request):
     if date_from > date_to:
         date_from, date_to = date_to, date_from
 
-    students_qs = Student.objects.select_related(
+    students_qs = scope_students_for_user(
+        request.user,
+        Student.objects.select_related(
         "center", "trainer", "counsellor", "batch"
-    ).prefetch_related("courses").filter(joining_date__range=(date_from, date_to))
-    enquiries_qs = Enquiry.objects.select_related(
+        ).prefetch_related("courses").filter(joining_date__range=(date_from, date_to)),
+    )
+    enquiries_qs = scope_enquiries_for_user(
+        request.user,
+        Enquiry.objects.select_related(
         "preferred_center", "interested_course", "assigned_counsellor"
-    ).filter(enquiry_date__range=(date_from, date_to))
-    converted_enquiries_qs = Enquiry.objects.select_related(
+        ).filter(enquiry_date__range=(date_from, date_to)),
+    )
+    converted_enquiries_qs = scope_enquiries_for_user(
+        request.user,
+        Enquiry.objects.select_related(
         "preferred_center", "interested_course", "assigned_counsellor"
-    ).filter(converted_at__range=(date_from, date_to))
+        ).filter(converted_at__range=(date_from, date_to)),
+    )
     installments_qs = Installment.objects.select_related(
         "student__center", "student__trainer", "student__counsellor"
     ).prefetch_related("student__courses").filter(installment_date__range=(date_from, date_to))
+    installments_qs = installments_qs.filter(student_id__in=students_qs.values_list("id", flat=True))
 
     if center_id:
         students_qs = students_qs.filter(center_id=center_id)
@@ -645,10 +737,10 @@ def reporting_dashboard(request):
         "course_id": course_id,
         "counsellor_id": counsellor_id,
         "trainer_id": trainer_id,
-        "centers": Center.objects.order_by("name"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name"),
         "courses": Course.objects.order_by("name"),
-        "counsellors": Counsellor.objects.select_related("center").all(),
-        "trainers": Trainer.objects.order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name"),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name"),
         "total_admissions": len(students),
         "total_enquiries": len(enquiries),
         "total_conversions": len(converted_enquiries),
@@ -665,6 +757,7 @@ def reporting_dashboard(request):
     return render(request, "student/reporting_dashboard.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def export_student_records_csv(request):
     context = build_student_record_context(request)
     return write_csv_response(
@@ -692,6 +785,7 @@ def export_student_records_csv(request):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def export_pending_fees_csv(request):
     context = build_pending_fee_context(request)
     return write_csv_response(
@@ -716,6 +810,7 @@ def export_pending_fees_csv(request):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def export_today_collection_csv(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
@@ -767,6 +862,7 @@ def export_today_collection_csv(request):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def export_daily_admissions_csv(request):
     today = date.today()
     center_id = request.GET.get("center", "").strip()
@@ -803,10 +899,12 @@ def export_daily_admissions_csv(request):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def admission_receipt(request, student_id):
-    student = get_object_or_404(
+    student = get_student_for_user_or_404(
+        request.user,
+        student_id,
         Student.objects.select_related("center", "trainer", "counsellor", "batch").prefetch_related("courses"),
-        id=student_id,
     )
     return render(
         request,
@@ -820,11 +918,13 @@ def admission_receipt(request, student_id):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def installment_receipt(request, installment_id):
     installment = get_object_or_404(
         Installment.objects.select_related("student__center", "student__trainer", "student__counsellor", "student__batch").prefetch_related("student__courses"),
         id=installment_id,
     )
+    get_student_for_user_or_404(request.user, installment.student_id)
     return render(
         request,
         "installment/installment_receipt.html",
@@ -838,15 +938,17 @@ def installment_receipt(request, installment_id):
     )
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def trainer_batches(request, trainer_id):
-    trainer = Trainer.objects.get(id=trainer_id)
+    trainer = get_object_or_404(scope_trainers_for_user(request.user, Trainer.objects.all()), id=trainer_id)
     batches = Batch.objects.filter(trainerschedule__trainer=trainer).distinct().order_by("time")
     return render(request, "attendance/batch_list.html", {"trainer": trainer, "batches": batches})
 
 
+@role_required(ROLE_ADMIN, ROLE_TRAINER)
 def batch_students(request, batch_id):
-    batch = Batch.objects.get(id=batch_id)
-    students = Student.objects.filter(batch=batch)
+    batch = get_object_or_404(scope_batches_for_user(request.user, Batch.objects.all()), id=batch_id)
+    students = scope_students_for_user(request.user, Student.objects.filter(batch=batch))
     today = date.today()
     attendance_map = {item.student_id: item.status for item in Attendance.objects.filter(date=today)}
 

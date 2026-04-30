@@ -1,29 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/certificates/certificate_dashboard.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .card { padding:22px; }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .toolbar { display:flex; gap:12px; align-items:end; flex-wrap:wrap; }
-    .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-top:18px; }
-    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:16px; }
-    .stat-value { font-size:28px; font-weight:700; margin-top:8px; }
-    label { display:block; font-weight:600; margin-bottom:6px; }
-    input, select { padding:10px 12px; border:1px solid var(--border); border-radius:10px; min-width:220px; }
-    .btn, .toggle-btn { background:var(--brand-black); color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; }
-    .toggle-btn.is-off { background:var(--surface-muted); color:var(--brand-black); border:1px solid var(--border); }
-    .toggle-btn.is-disabled { background:var(--border); color:var(--text-muted); cursor:not-allowed; }
-    .muted { color:var(--text-muted); }
-    .pill { display:inline-block; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:700; }
-    .pill.not-given { background:#fff0f0; color:#b23a3a; }
-    .pill.pending { background:#fff6e7; color:#9a6700; }
-    .pill.created { background:var(--surface-muted); color:var(--brand-red); }
-    .pill.given { background:#ebf8ef; color:#24764b; }
-    .toggle-stack { display:grid; gap:8px; }
-    .toggle-form { margin:0; }
-    .table-wrap { overflow-x:auto; }
-</style>
+
 
 <div class="page-shell">
 {% if messages %}
@@ -33,8 +16,8 @@
 {% endif %}
 
 <div class="card hero-card">
-    <h2 style="margin:0 0 8px;">Certificate System</h2>
-    <p style="margin:0;">Track whether student certificates are ready and whether they have already been given.</p>
+    <h2 class="css-inline-1">Certificate System</h2>
+    <p class="css-inline-2">Track whether student certificates are ready and whether they have already been given.</p>
     <div class="stats">
         <div class="stat-box">
             <div>Total Records</div>
@@ -73,13 +56,13 @@
         </div>
         <button class="btn" type="submit">Show Records</button>
         {% if search_query or status_filter %}
-        <a href="{% url 'certificate_dashboard' %}" class="muted" style="text-decoration:none;padding-bottom:12px;">Clear filter</a>
+        <a href="{% url 'certificate_dashboard' %}" class="muted css-inline-3">Clear filter</a>
         {% endif %}
     </form>
 </div>
 
 <div class="card">
-    <h3 style="margin-top:0;">Certificate Records</h3>
+    <h3 class="css-inline-4">Certificate Records</h3>
     <div class="table-wrap">
         <table class="dashboard-table">
             <thead>

@@ -1,0 +1,27 @@
+.page-shell { display:grid; gap:20px; }
+    .hero-card, .table-card, .filter-card, .message-card, .focus-card { padding:22px; }
+    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
+    .message-card { background:var(--surface-muted); border-left:4px solid var(--brand-black); }
+    .action-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
+    .btn { background:var(--brand-black); color:#fff; border:0; }
+    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-top:18px; }
+    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
+    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
+    .filter-grid { display:grid; grid-template-columns:minmax(0, 1fr) auto auto; gap:12px; align-items:end; }
+    .focus-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
+    .focus-card { background:linear-gradient(135deg, #fff8f8, #ffffff); }
+    .focus-card strong { display:block; font-size:18px; color:var(--brand-black); margin-bottom:6px; }
+    label { display:block; font-weight:600; margin-bottom:6px; color:var(--brand-black); }
+    .meta { color:var(--text-muted); }
+    .section-title { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+    .section-kicker { display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:999px; background:var(--surface-muted); color:var(--brand-black); font-size:13px; font-weight:700; }
+    .table-wrap { overflow-x:auto; }
+    @media (max-width: 900px) { .filter-grid { grid-template-columns:1fr; } }
+
+.css-inline-1 { margin:0 0 8px; }
+
+.css-inline-2 { margin:0; }
+
+.css-inline-3 { margin:10px 0 0; }

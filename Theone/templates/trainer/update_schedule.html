@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/trainer/schedule_form_partial.css' %}">
+{% endblock %}
 
 {% block content %}
 {% include 'trainer/schedule_form_partial.html' with page_title='Update Schedule' submit_label='Update Schedule' back_to_schedule=True %}

@@ -9,6 +9,18 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from student.models import Batch, Center, Counsellor, Course, Enquiry, Student, Trainer
+from student.portal import (
+    ROLE_ADMIN,
+    ROLE_COUNSELLOR,
+    get_enquiry_for_user_or_404,
+    get_portal_role,
+    role_required,
+    scope_batches_for_user,
+    scope_centers_for_user,
+    scope_counsellors_for_user,
+    scope_enquiries_for_user,
+    scope_trainers_for_user,
+)
 
 
 def build_enquiry_list_context(request):
@@ -16,13 +28,16 @@ def build_enquiry_list_context(request):
     status_filter = request.GET.get("status", "").strip()
     counsellor_filter = request.GET.get("counsellor", "").strip()
 
-    enquiries = Enquiry.objects.select_related(
+    enquiries = scope_enquiries_for_user(
+        request.user,
+        Enquiry.objects.select_related(
         "interested_course",
         "preferred_batch",
         "preferred_center",
         "assigned_counsellor",
         "converted_student",
-    ).order_by("-updated_at", "-enquiry_date")
+        ).order_by("-updated_at", "-enquiry_date"),
+    )
 
     if query:
         enquiries = enquiries.filter(
@@ -44,7 +59,7 @@ def build_enquiry_list_context(request):
         "status_filter": status_filter,
         "counsellor_filter": counsellor_filter,
         "status_choices": Enquiry.STATUS_CHOICES,
-        "counsellors": Counsellor.objects.all().order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.all()).order_by("name"),
         "total_enquiries": len(enquiries),
         "new_count": sum(1 for enquiry in enquiries if enquiry.status == "new"),
         "follow_up_count": sum(1 for enquiry in enquiries if enquiry.status in {"contacted", "follow_up", "demo_scheduled", "demo_attended", "interested", "ready"}),
@@ -63,20 +78,25 @@ def write_csv_response(filename, headers, rows):
     return response
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def enquiry_list(request):
     return render(request, "enquiry/enquiry_list.html", build_enquiry_list_context(request))
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def today_follow_up(request):
     today = date.today()
     counsellor_filter = request.GET.get("counsellor", "").strip()
-    base_qs = Enquiry.objects.select_related(
+    base_qs = scope_enquiries_for_user(
+        request.user,
+        Enquiry.objects.select_related(
         "interested_course",
         "preferred_batch",
         "preferred_center",
         "assigned_counsellor",
         "converted_student",
-    ).exclude(status__in=["admitted", "lost"])
+        ).exclude(status__in=["admitted", "lost"]),
+    )
     if counsellor_filter:
         base_qs = base_qs.filter(assigned_counsellor_id=counsellor_filter)
 
@@ -101,13 +121,14 @@ def today_follow_up(request):
             "overdue_count": len(overdue_enquiries),
             "ready_count": len(ready_enquiries),
             "counsellor_filter": counsellor_filter,
-            "counsellors": Counsellor.objects.all().order_by("name"),
+            "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.all()).order_by("name"),
         },
     )
 
 
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def export_enquiries_csv(request):
     context = build_enquiry_list_context(request)
     return write_csv_response(
@@ -134,8 +155,11 @@ def export_enquiries_csv(request):
 
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def enquiry_detail(request, id):
-    enquiry = get_object_or_404(
+    enquiry = get_enquiry_for_user_or_404(
+        request.user,
+        id,
         Enquiry.objects.select_related(
             "interested_course",
             "preferred_batch",
@@ -143,28 +167,30 @@ def enquiry_detail(request, id):
             "assigned_counsellor",
             "converted_student",
         ),
-        id=id,
     )
     return render(request, "enquiry/enquiry_detail.html", {"enquiry": enquiry})
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def add_enquiry(request):
-    context = build_enquiry_form_context()
+    context = build_enquiry_form_context(form_data={"_request": request})
     if request.method == "POST":
         return save_enquiry_form(request, context)
     return render(request, "enquiry/enquiry_form.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def update_enquiry(request, id):
-    enquiry = get_object_or_404(Enquiry, id=id)
-    context = build_enquiry_form_context(enquiry=enquiry)
+    enquiry = get_enquiry_for_user_or_404(request.user, id)
+    context = build_enquiry_form_context(enquiry=enquiry, form_data={"_request": request})
     if request.method == "POST":
         return save_enquiry_form(request, context, enquiry=enquiry)
     return render(request, "enquiry/enquiry_form.html", context)
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def delete_enquiry(request, id):
-    enquiry = get_object_or_404(Enquiry, id=id)
+    enquiry = get_enquiry_for_user_or_404(request.user, id)
     if enquiry.converted_student_id:
         messages.error(request, "Converted enquiry cannot be deleted because it is linked to a student record.")
         return redirect("enquiry_detail", id=enquiry.id)
@@ -175,8 +201,11 @@ def delete_enquiry(request, id):
     return redirect("enquiry_list")
 
 
+@role_required(ROLE_ADMIN, ROLE_COUNSELLOR)
 def convert_enquiry(request, id):
-    enquiry = get_object_or_404(
+    enquiry = get_enquiry_for_user_or_404(
+        request.user,
+        id,
         Enquiry.objects.select_related(
             "interested_course",
             "preferred_batch",
@@ -184,13 +213,12 @@ def convert_enquiry(request, id):
             "assigned_counsellor",
             "converted_student",
         ),
-        id=id,
     )
     if enquiry.converted_student_id:
         messages.info(request, "This enquiry is already converted to admission.")
         return redirect("student_detail", id=enquiry.converted_student_id)
 
-    context = build_conversion_context(enquiry)
+    context = build_conversion_context(enquiry, form_data={"_request": request})
     if request.method == "POST":
         return save_enquiry_conversion(request, enquiry, context)
     return render(request, "enquiry/convert_enquiry.html", context)
@@ -198,13 +226,14 @@ def convert_enquiry(request, id):
 
 def build_enquiry_form_context(enquiry=None, error=None, form_data=None):
     form_data = form_data or {}
+    request = form_data.get("_request")
     return {
         "enquiry": enquiry,
         "error": error or [],
         "courses": Course.objects.all().order_by("name"),
-        "batches": Batch.objects.all().order_by("time"),
-        "centers": Center.objects.all().order_by("name"),
-        "counsellors": Counsellor.objects.select_related("center").all(),
+        "batches": scope_batches_for_user(request.user, Batch.objects.all()).order_by("time") if request else Batch.objects.all().order_by("time"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name") if request else Center.objects.all().order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name") if request else Counsellor.objects.select_related("center").all(),
         "status_choices": Enquiry.STATUS_CHOICES,
         "probability_choices": Enquiry.PROBABILITY_CHOICES,
         "form_data": {
@@ -264,9 +293,15 @@ def save_enquiry_form(request, context, enquiry=None):
         "lost_reason": (request.POST.get("lost_reason") or "").strip(),
     }
 
+    if get_portal_role(request.user) == ROLE_COUNSELLOR and hasattr(request.user, "counsellor_profile"):
+        form_data["assigned_counsellor_id"] = request.user.counsellor_profile.id
+        form_data["preferred_center_id"] = request.user.counsellor_profile.center_id
+
     error = validate_enquiry_form(form_data, enquiry=enquiry)
     if error:
-        context.update(build_enquiry_form_context(enquiry=enquiry, error=[error], form_data=normalize_enquiry_form_data(form_data)))
+        normalized_form_data = normalize_enquiry_form_data(form_data)
+        normalized_form_data["_request"] = request
+        context.update(build_enquiry_form_context(enquiry=enquiry, error=[error], form_data=normalized_form_data))
         return render(request, "enquiry/enquiry_form.html", context)
 
     payload = normalize_enquiry_payload(form_data)
@@ -283,6 +318,7 @@ def save_enquiry_form(request, context, enquiry=None):
 
 def build_conversion_context(enquiry, error=None, form_data=None):
     form_data = form_data or {}
+    request = form_data.get("_request")
     course_fee = form_data.get("course_fee", enquiry.fee_discussed if enquiry.fee_discussed else "")
     discount_type = form_data.get("discount_type", "value")
     discount_value = form_data.get("discount_value", "")
@@ -290,10 +326,10 @@ def build_conversion_context(enquiry, error=None, form_data=None):
         "enquiry": enquiry,
         "error": error or [],
         "courses": Course.objects.all().order_by("name"),
-        "trainers": Trainer.objects.all().order_by("name"),
-        "batches": Batch.objects.all().order_by("time"),
-        "centers": Center.objects.all().order_by("name"),
-        "counsellors": Counsellor.objects.select_related("center").all(),
+        "trainers": scope_trainers_for_user(request.user, Trainer.objects.all()).order_by("name") if request else Trainer.objects.all().order_by("name"),
+        "batches": scope_batches_for_user(request.user, Batch.objects.all()).order_by("time") if request else Batch.objects.all().order_by("time"),
+        "centers": scope_centers_for_user(request.user, Center.objects.all()).order_by("name") if request else Center.objects.all().order_by("name"),
+        "counsellors": scope_counsellors_for_user(request.user, Counsellor.objects.select_related("center")).order_by("name") if request else Counsellor.objects.select_related("center").all(),
         "form_data": {
             "course": form_data.get("course", str(enquiry.interested_course_id) if enquiry.interested_course_id else ""),
             "trainer": form_data.get("trainer", ""),
@@ -330,6 +366,9 @@ def save_enquiry_conversion(request, enquiry, context):
         "reference_source": (request.POST.get("reference_source") or "").strip(),
         "status": request.POST.get("status") or "active",
     }
+    if get_portal_role(request.user) == ROLE_COUNSELLOR and hasattr(request.user, "counsellor_profile"):
+        form_data["counsellor"] = request.user.counsellor_profile.id
+        form_data["center"] = request.user.counsellor_profile.center_id
     form_data["final_course_fee"] = calculate_discounted_fee(
         form_data["course_fee"],
         form_data["discount_type"],
@@ -338,6 +377,7 @@ def save_enquiry_conversion(request, enquiry, context):
 
     error = validate_conversion_form(form_data)
     if error:
+        form_data["_request"] = request
         context.update(build_conversion_context(enquiry, error=[error], form_data=form_data))
         return render(request, "enquiry/convert_enquiry.html", context)
 
@@ -347,7 +387,7 @@ def save_enquiry_conversion(request, enquiry, context):
             build_conversion_context(
                 enquiry,
                 error=[f"A student already exists with this mobile number: {duplicate_student.name} ({duplicate_student.student_id})."],
-                form_data=form_data,
+                form_data={**form_data, "_request": request},
             )
         )
         return render(request, "enquiry/convert_enquiry.html", context)

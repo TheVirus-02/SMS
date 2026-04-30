@@ -1,10 +1,14 @@
 import uuid
+from django.contrib.auth import get_user_model
 from django.db import models
 from datetime import date, datetime, timedelta
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 
 # Create your models here.
+User = get_user_model()
+
+
 class Course(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
@@ -13,9 +17,12 @@ class Course(models.Model):
         return self.name
 
 class Counsellor(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="counsellor_profile")
     name = models.CharField(max_length=100)
     mobile = models.CharField(max_length=15, null=True, blank=True)
     center = models.ForeignKey('Center', on_delete=models.SET_NULL, null=True, blank=True)
+    can_send_fee_reminders = models.BooleanField(default=False)
+    can_send_follow_up_reminders = models.BooleanField(default=False)
     address = models.TextField(null=True, blank=True)
     age = models.IntegerField(null=True, blank=True, default=0)
     dob = models.DateField(null=True, blank=True)
@@ -301,6 +308,7 @@ class Student(models.Model):
 
 
 class Trainer(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="trainer_profile")
     name = models.CharField(max_length=100)
     age = models.IntegerField(null=True, blank=True,default=0)
     dob = models.DateField(null=True, blank=True)

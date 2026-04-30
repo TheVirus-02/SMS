@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/portal/counsellor_dashboard.css' %}">
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="page-shell">
+    <div class="hero-card css-inline-1">
+        <h2 class="css-inline-2">Counsellor Dashboard</h2>
+        <p class="css-inline-3">Center: {{ center_name }}. This dashboard only shows your center-related student, enquiry, and fee data.</p>
+        {% if portal_can_access_reminder_center %}
+        <div class="css-inline-4">
+            <a class="secondary-link" href="{% url 'reminder_center' %}">Open Reminder Center</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="stats-grid">
+        <div class="metric-box">Students<strong>{{ student_count }}</strong></div>
+        <div class="metric-box">Active Students<strong>{{ active_students }}</strong></div>
+        <div class="metric-box">Pending Fee<strong>{{ pending_fee_total }}</strong></div>
+        <div class="metric-box">Today Admissions<strong>{{ today_admissions }}</strong></div>
+        <div class="metric-box">Today Follow-ups<strong>{{ today_follow_up_count }}</strong></div>
+        <div class="metric-box">Open Enquiries<strong>{{ open_enquiry_count }}</strong></div>
+    </div>
+
+    <div class="panel-grid">
+        <div class="table-card css-inline-1">
+            <h3 class="css-inline-5">Recent Students</h3>
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead><tr><th>Student</th><th>Trainer</th><th>Batch</th><th>Fee</th></tr></thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td><a href="{% url 'student_detail' student.id %}">{{ student.name }}</a></td>
+                            <td>{{ student.trainer.name|default:"-" }}</td>
+                            <td>{{ student.batch|default:"-" }}</td>
+                            <td>{{ student.remaining_fee }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4">No student records found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="table-card css-inline-1">
+            <h3 class="css-inline-5">Recent Enquiries</h3>
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead><tr><th>Name</th><th>Status</th><th>Course</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for enquiry in recent_enquiries %}
+                        <tr>
+                            <td>{{ enquiry.name }}</td>
+                            <td>{{ enquiry.get_status_display }}</td>
+                            <td>{{ enquiry.interested_course.name|default:"-" }}</td>
+                            <td><a href="{% url 'enquiry_detail' enquiry.id %}">Open</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4">No enquiries found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

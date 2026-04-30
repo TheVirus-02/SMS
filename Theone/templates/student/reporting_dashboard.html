@@ -1,27 +1,17 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/student/reporting_dashboard.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .page-shell { display:grid; gap:20px; }
-    .hero-card, .filter-card, .table-card { background:#fff; border-radius:18px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,0.08); }
-    .hero-card { background:linear-gradient(135deg, var(--brand-black), var(--brand-red)); color:#fff; }
-    .stats-grid, .filter-grid { display:grid; gap:16px; }
-    .stats-grid { grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); margin-top:18px; }
-    .stat-box { background:rgba(255,255,255,0.14); border-radius:14px; padding:14px; }
-    .stat-box strong { display:block; font-size:28px; margin-top:6px; }
-    .filter-grid { grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); }
-    .actions-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn, .secondary-link { display:inline-block; padding:11px 18px; border-radius:12px; text-decoration:none; font-weight:700; }
-    .btn { background:var(--brand-black); color:#fff; border:0; }
-    .secondary-link { background:var(--surface-muted); color:var(--brand-black); }
-    .section-title { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
-    .meta { color:var(--text-muted); }
-</style>
+
 
 <div class="page-shell">
     <div class="hero-card">
-        <h2 style="margin:0 0 8px;">Reports and Exports</h2>
-        <p style="margin:0;">Analyze admissions, enquiries, collections, and team performance with a single reporting layer.</p>
+        <h2 class="css-inline-1">Reports and Exports</h2>
+        <p class="css-inline-2">Analyze admissions, enquiries, collections, and team performance with a single reporting layer.</p>
         <div class="actions-row">
             <a class="secondary-link" href="{% url 'index' %}">Back to Dashboard</a>
             <a class="secondary-link" href="{% url 'record' %}">Student Records</a>
@@ -89,7 +79,7 @@
 
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Center Summary</h3>
+            <h3 class="css-inline-2">Center Summary</h3>
             <div class="meta">{{ date_from }} to {{ date_to }}</div>
         </div>
         <table>
@@ -104,7 +94,7 @@
 
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Course Summary</h3>
+            <h3 class="css-inline-2">Course Summary</h3>
             <div class="meta">Admissions and fee load by course</div>
         </div>
         <table>
@@ -119,7 +109,7 @@
 
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Trainer Summary</h3>
+            <h3 class="css-inline-2">Trainer Summary</h3>
             <div class="meta">Assigned students and collection load</div>
         </div>
         <table>
@@ -134,7 +124,7 @@
 
     <div class="table-card">
         <div class="section-title">
-            <h3 style="margin:0;">Counsellor Summary</h3>
+            <h3 class="css-inline-2">Counsellor Summary</h3>
             <div class="meta">Enquiry to admission performance</div>
         </div>
         <table>

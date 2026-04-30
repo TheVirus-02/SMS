@@ -1,71 +1,21 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/pages/exams/update_marks.css' %}">
+{% endblock %}
+
 
 {% block content %}
-<style>
-    .card {
-        max-width: 760px;
-        background: #fff;
-        border-radius: 16px;
-        padding: 22px;
-        box-shadow: 0 10px 28px rgba(18, 39, 63, 0.08);
-    }
 
-    .field-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-    }
-
-    label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-
-    input {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        box-sizing: border-box;
-    }
-
-    .btn {
-        background: var(--brand-black);
-        color: #fff;
-        border: 0;
-        border-radius: 10px;
-        padding: 12px 18px;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .stat {
-        padding: 12px;
-        border-radius: 12px;
-        background: var(--surface-muted);
-        margin-bottom: 12px;
-    }
-
-    .muted {
-        color: var(--text-muted);
-    }
-
-    @media (max-width: 720px) {
-        .field-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
 
 {% if messages %}
     {% for message in messages %}
-        <div class="card" style="margin-bottom: 16px;">{{ message }}</div>
+        <div class="card css-inline-1">{{ message }}</div>
     {% endfor %}
 {% endif %}
 
 <div class="card">
-    <h2 style="margin-top: 0;">Update Exam Marks</h2>
+    <h2 class="css-inline-2">Update Exam Marks</h2>
     <div class="stat">
         <strong>{{ reg.student_name }}</strong> | {{ reg.course_name }}<br>
         <span class="muted">Exam Date: {{ reg.exam_date }} | Receipt: {{ reg.receipt_no }}</span>
@@ -84,7 +34,7 @@
             </div>
         </div>
 
-        <div class="field-grid" style="margin-top: 16px;">
+        <div class="field-grid css-inline-3">
             <div class="stat">
                 <div class="muted">Calculated Marks</div>
                 <strong>{{ reg.calculated_marks|default:"Will be calculated after save" }}</strong>
@@ -95,7 +45,7 @@
             </div>
         </div>
 
-        <button class="btn" type="submit" style="margin-top: 18px;">Save Marks</button>
+        <button class="btn css-inline-4" type="submit">Save Marks</button>
     </form>
 </div>
 {% endblock %}
