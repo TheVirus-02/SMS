@@ -13,7 +13,22 @@
     table { width:100%; border-collapse:collapse; }
     th, td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
     th { background:var(--surface-muted); }
+    .table-wrap { overflow-x:auto; }
     @media (max-width:900px) { .filter-grid { grid-template-columns:1fr; } }
+    @media (max-width:700px) {
+        .hero-card, .filter-card, .table-card { padding:16px; border-radius:14px; }
+        .stats-grid { grid-template-columns:1fr 1fr; gap:12px; }
+        .stat-box strong { font-size:24px; }
+        .action-row { display:grid; grid-template-columns:1fr; }
+        .btn, .secondary-link { width:100%; box-sizing:border-box; text-align:center; }
+        table, thead, tbody, th, td, tr { display:block; }
+        thead { display:none; }
+        tr { border:1px solid var(--border); border-radius:14px; padding:10px 12px; margin-bottom:12px; background:#fff; }
+        td { border:0; padding:8px 0; display:grid; grid-template-columns:minmax(110px, 40%) 1fr; gap:10px; }
+        td::before { content:attr(data-label); font-weight:700; color:var(--brand-black); }
+        td[colspan] { display:block; }
+        td[colspan]::before { content:none; }
+    }
 
 .css-inline-1 { margin:0 0 8px; }
 

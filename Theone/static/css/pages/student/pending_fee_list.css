@@ -16,6 +16,22 @@
     .meta { color:var(--text-muted); }
     .course-list { display:flex; flex-wrap:wrap; gap:6px; }
     .course-tag { padding:6px 10px; border-radius:999px; background:var(--surface-muted); color:var(--brand-red); font-size:12px; font-weight:600; }
+    .table-wrap { overflow-x:auto; }
+    @media (max-width:700px) {
+        .hero-card, .filter-card, .table-card { padding:16px; border-radius:14px; }
+        .stats-grid { grid-template-columns:1fr 1fr; gap:12px; }
+        .stat-box strong { font-size:24px; }
+        .actions-row { display:grid; grid-template-columns:1fr; }
+        .btn, .secondary-link, .mini-action { width:100%; box-sizing:border-box; text-align:center; }
+        table, thead, tbody, th, td, tr { display:block; }
+        thead { display:none; }
+        tr { border:1px solid var(--border); border-radius:14px; padding:10px 12px; margin-bottom:12px; background:#fff; }
+        td { border:0; padding:8px 0; display:grid; grid-template-columns:minmax(110px, 40%) 1fr; gap:10px; }
+        td::before { content:attr(data-label); font-weight:700; color:var(--brand-black); }
+        td[colspan] { display:block; }
+        td[colspan]::before { content:none; }
+        .css-inline-3 { width:100%; }
+    }
 
 .css-inline-1 { margin:0 0 8px; }
 

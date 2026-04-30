@@ -78,43 +78,45 @@
     </form>
 
     <div class="table-card">
-        <table>
-            <tr>
-                <th>Student</th>
-                <th>Courses</th>
-                <th>Trainer / Center</th>
-                <th>Fee Summary</th>
-                <th>Action</th>
-            </tr>
-            {% for student in students %}
-            <tr>
-                <td><a href="{% url 'student_detail' student.id %}"><strong>{{ student.name }}</strong></a><br><span class="meta">{{ student.student_id }}</span><br><span class="meta">{{ student.mobile_no }}</span></td>
-                <td>
-                    <div class="course-list">
-                        {% for course in student.courses.all %}
-                        <span class="course-tag">{{ course.name }}</span>
-                        {% empty %}
-                        <span class="meta">No courses</span>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td>{{ student.trainer.name|default:"-" }}<br><span class="meta">{{ student.center.name|default:"-" }}</span><br><span class="meta">{{ student.counsellor.name|default:"-" }}</span></td>
-                <td><div><strong>Total:</strong> {{ student.course_fee|default:0 }}</div><div><strong>Paid:</strong> {{ student.total_paid }}</div><div><strong>Remaining:</strong> {{ student.remaining_fee }}</div></td>
-                <td>
-                    <div class="actions-row css-inline-3">
-                        <a class="mini-action" href="{% url 'student_detail' student.id %}">View</a>
-                        {% if can_manage_fees %}
-                        <a class="mini-action" href="{% url 'add_installment' student.id %}">Add Installment</a>
-                        {% endif %}
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5">No student with pending fee matched the current filters.</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Student</th>
+                    <th>Courses</th>
+                    <th>Trainer / Center</th>
+                    <th>Fee Summary</th>
+                    <th>Action</th>
+                </tr>
+                {% for student in students %}
+                <tr>
+                    <td data-label="Student"><a href="{% url 'student_detail' student.id %}"><strong>{{ student.name }}</strong></a><br><span class="meta">{{ student.student_id }}</span><br><span class="meta">{{ student.mobile_no }}</span></td>
+                    <td data-label="Courses">
+                        <div class="course-list">
+                            {% for course in student.courses.all %}
+                            <span class="course-tag">{{ course.name }}</span>
+                            {% empty %}
+                            <span class="meta">No courses</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td data-label="Trainer / Center">{{ student.trainer.name|default:"-" }}<br><span class="meta">{{ student.center.name|default:"-" }}</span><br><span class="meta">{{ student.counsellor.name|default:"-" }}</span></td>
+                    <td data-label="Fee Summary"><div><strong>Total:</strong> {{ student.course_fee|default:0 }}</div><div><strong>Paid:</strong> {{ student.total_paid }}</div><div><strong>Remaining:</strong> {{ student.remaining_fee }}</div></td>
+                    <td data-label="Action">
+                        <div class="actions-row css-inline-3">
+                            <a class="mini-action" href="{% url 'student_detail' student.id %}">View</a>
+                            {% if can_manage_fees %}
+                            <a class="mini-action" href="{% url 'add_installment' student.id %}">Add Installment</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No student with pending fee matched the current filters.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

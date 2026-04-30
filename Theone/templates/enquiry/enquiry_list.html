@@ -79,28 +79,28 @@
                 <tbody>
                     {% for enquiry in enquiries %}
                     <tr>
-                        <td>
+                        <td data-label="Student">
                             <a href="{% url 'enquiry_detail' enquiry.id %}"><strong>{{ enquiry.name }}</strong></a><br>
                             <span class="meta">{{ enquiry.mobile_no }}</span><br>
                             <span class="meta">Enquiry Date: {{ enquiry.enquiry_date }}</span>
                         </td>
-                        <td>
+                        <td data-label="Course / Center">
                             <div>{{ enquiry.interested_course.name|default:"-" }}</div>
                             <div class="meta">{{ enquiry.preferred_center.name|default:"-" }} | {{ enquiry.preferred_batch|default:"-" }}</div>
                         </td>
-                        <td>{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
-                        <td>
+                        <td data-label="Counsellor">{{ enquiry.assigned_counsellor.name|default:"-" }}</td>
+                        <td data-label="Follow-up">
                             <div><strong>Next:</strong> {{ enquiry.next_follow_up_date|default:"-" }}</div>
                             <div class="meta"><strong>Last:</strong> {{ enquiry.last_follow_up_date|default:"-" }}</div>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <span class="status-pill">{{ enquiry.get_status_display }}</span>
                             <div class="meta css-inline-3">{{ enquiry.get_admission_probability_display }}</div>
                             {% if enquiry.is_converted %}
                             <div class="meta">Student ID: {{ enquiry.converted_student.student_id }}</div>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="Action">
                             <a href="{% url 'enquiry_detail' enquiry.id %}">Open</a> |
                             <a href="{% url 'update_enquiry' enquiry.id %}">Edit</a>
                             {% if enquiry.is_converted %}

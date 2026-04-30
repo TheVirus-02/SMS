@@ -48,22 +48,24 @@
             <h3 class="css-inline-2">Center Summary</h3>
             <div class="meta">Center wise today collection</div>
         </div>
-        <table>
-            <tr>
-                <th>Center</th>
-                <th>Amount</th>
-            </tr>
-            {% for center_name, amount in center_totals %}
-            <tr>
-                <td>{{ center_name }}</td>
-                <td><strong>{{ amount }}</strong></td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">No collection recorded today.</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Center</th>
+                    <th>Amount</th>
+                </tr>
+                {% for center_name, amount in center_totals %}
+                <tr>
+                    <td data-label="Center">{{ center_name }}</td>
+                    <td data-label="Amount"><strong>{{ amount }}</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">No collection recorded today.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
 
     <div class="table-card">
@@ -71,42 +73,44 @@
             <h3 class="css-inline-2">Collection Entries</h3>
             <div class="meta">Total: {{ collection_count }}</div>
         </div>
-        <table>
-            <tr>
-                <th>Type</th>
-                <th>Student</th>
-                <th>Center</th>
-                <th>Courses</th>
-                <th>Amount</th>
-                <th>Mode</th>
-                <th>Reference</th>
-                <th>Remarks</th>
-                <th>Receipt</th>
-            </tr>
-            {% for row in collection_rows %}
-            <tr>
-                <td>{{ row.kind }}</td>
-                <td><a href="{% url 'student_detail' row.student.id %}"><strong>{{ row.student.name }}</strong></a><br><span class="meta">{{ row.student.student_id }}</span></td>
-                <td>{{ row.center_name }}</td>
-                <td>{{ row.courses }}</td>
-                <td><strong>{{ row.amount }}</strong></td>
-                <td>{{ row.payment_mode }}</td>
-                <td>{{ row.reference }}</td>
-                <td>{{ row.remarks }}</td>
-                <td>
-                    {% if row.receipt_kind == 'admission' %}
-                    <a href="{% url 'admission_receipt' row.student.id %}">Open</a>
-                    {% else %}
-                    <a href="{% url 'installment_receipt' row.installment_id %}">Open</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="9">No collection entry recorded today.</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="table-wrap">
+            <table>
+                <tr>
+                    <th>Type</th>
+                    <th>Student</th>
+                    <th>Center</th>
+                    <th>Courses</th>
+                    <th>Amount</th>
+                    <th>Mode</th>
+                    <th>Reference</th>
+                    <th>Remarks</th>
+                    <th>Receipt</th>
+                </tr>
+                {% for row in collection_rows %}
+                <tr>
+                    <td data-label="Type">{{ row.kind }}</td>
+                    <td data-label="Student"><a href="{% url 'student_detail' row.student.id %}"><strong>{{ row.student.name }}</strong></a><br><span class="meta">{{ row.student.student_id }}</span></td>
+                    <td data-label="Center">{{ row.center_name }}</td>
+                    <td data-label="Courses">{{ row.courses }}</td>
+                    <td data-label="Amount"><strong>{{ row.amount }}</strong></td>
+                    <td data-label="Mode">{{ row.payment_mode }}</td>
+                    <td data-label="Reference">{{ row.reference }}</td>
+                    <td data-label="Remarks">{{ row.remarks }}</td>
+                    <td data-label="Receipt">
+                        {% if row.receipt_kind == 'admission' %}
+                        <a href="{% url 'admission_receipt' row.student.id %}">Open</a>
+                        {% else %}
+                        <a href="{% url 'installment_receipt' row.installment_id %}">Open</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">No collection entry recorded today.</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
